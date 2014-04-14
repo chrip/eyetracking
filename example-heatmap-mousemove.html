@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>heatmap.js | Examples: Realtime Mouse Movement Heatmap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="heatmap.js example showing a realtime mouse movement heatmap">
+    <meta name="keywords" content="mousemove heatmap, realtime mouse heatmap">
+    <meta name="author" content="Patrick Wied">
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/prettify.css" rel="stylesheet">
+
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+    </style>
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+    <div class="container">
+        <div class="page-header">
+            <h1>
+            Examples
+            <small>See how easy it is to create heatmaps with heatmap.js</small>
+            </h1>
+        </div>
+        <div class="row">
+
+                <div class="tab-content">
+                    <div class="tab-pane active" id="tab1">
+                    <div style="padding:8px 0">This example shows a realtime heatmap with mouse movement data, if you click on the surface to the right it will add the datapoint right after the click.</div>
+                        <div class="alert alert-info">Move over the surface in order to create datapoints for the heatmap!</div>
+                        <div id="heatmapArea" class="well" style="width:610px;padding:0;height:400px;cursor:pointer;position:relative;">
+                        </div>
+                                            </div>
+
+                </div>
+        </div>
+        <hr>
+
+      <footer>
+        <p style="width:330px;margin:auto;">heatmap.js by <a href="http://www.patrick-wied.at/" title="patrick wied javascript developer" target="_blank">Patrick Wied</a> (<a href="http://twitter.com/patrickwied" target="_blank">@patrickwied</a>) 2011-2013</p>
+      </footer>
+<a href="https://github.com/pa7/heatmap.js" target="_blank"><img style="position: fixed; top: 0; left: 0; border: 0;z-index:10000" src="https://s3.amazonaws.com/github/ribbons/forkme_left_red_aa0000.png" alt="Fork me on GitHub"></a>
+    </div> <!-- /container -->
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/prettify.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/bootstrap-tab.js"></script>
+    <script type="text/javascript" src="js/heatmap.js"></script>
+    <script type="text/javascript">
+        !function($){
+            $(function(){
+                window.prettyPrint && prettyPrint();
+                var heatmap = h337.create({
+                    element: $("#heatmapArea")[0],
+                    radius: 30,
+                    opacity: 50,
+                    legend: {
+                        position: 'br',
+                        title: 'Mouse Move Distribution'
+                    }
+                });
+                window.heatmap = heatmap;
+
+                var active = true,
+                    idle = false,
+                    over = false,
+                    x = 0,
+                    y = 0,
+                    simulate = false;
+
+                setInterval(function(){
+                    active = true;
+                }, 80);
+
+                var idlechecker = setInterval(function(){
+                    if(over && !simulate){
+                        simulate = setInterval(function(){
+                            heatmap.store.addDataPoint(x, y, 1);
+                        }, 1000);
+                    }
+                }, 150);
+
+
+                var add = function(e, scope){
+                    x = e.pageX - scope.offsetLeft;
+	            y = e.pageY - scope.offsetTop;
+                    heatmap.store.addDataPoint(x, y, 1);
+                };
+
+                var area = $('#heatmapArea');
+
+                area.mousemove(function(e){
+                    over = true;
+                    if(simulate){
+                        clearInterval(simulate);
+                        simulate = false;
+                    }
+
+                    if(active){
+                        add(e, this);
+                        active = false;
+                    }
+                }).click(function(e){
+                    add(e, this);
+                }).mouseout(function(){
+                    over = false;
+                });
+                
+            });
+        }(window.jQuery)
+    </script>
+  </body>
+</html>
+
+
+
+
