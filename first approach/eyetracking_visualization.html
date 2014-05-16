@@ -15,6 +15,14 @@
 <br>
 <div><strong>Blickpfaddatei auswählen</strong><br><input type="file" id="gazeDataFile" name="gazeDataFile" /></div>
 -->
+
+<div align="left">
+	<strong>Dateiauswahl: </strong>
+	<select name="fileSelection" id="fileSelection" onchange="fileChanged()">
+	<option value=donothing>Bitte wählen</option>
+	</select>
+</div>
+
 <p><div id="imageDiv"></div></p>
 <p><div id="dataDiv"></div></p>
 

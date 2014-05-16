@@ -4,6 +4,7 @@
 		$('#gazeDataFile').bind('change', handleGazeDataSelect);
 	}
 	
+	receiveSelection();
 	receiveGazeData();
 	receiveImage();
 });
@@ -83,6 +84,33 @@ function readCSV(file){
 	}
 };
 
+// receive potential files for visualization 
+function receiveSelection(){
+	
+	$.ajax({
+		type: 'GET',
+		url: 'selectiondata.html',
+		datatype: 'json',
+		success: function(data){
+			
+			var content = eval("("+data+")")
+			
+			// add options to dropdown menu
+			for(var i = 0; i < content.selectiondata.length; i++){
+				n = content.selectiondata[i].name;
+				$('#fileSelection').append($('<option></option>').val(n).html(n));
+			}	
+			
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("jq: " + JSON.stringify(jqXHR));
+			console.log("textStatus: " + textStatus);
+			console.log("errorThrown:" + errorThrown);
+			console.log('failed to load gaze data');			
+		}
+	});		
+};
+
 function receiveGazeData(){
 
 	console.log("try to receive gaze data");
@@ -131,3 +159,15 @@ function receiveImage(){
 	});
 };	
 		
+// call draw function etc.
+// TODO		
+function fileChanged(){
+
+	var value = $('#fileSelection').val();
+	
+	if(value != "donothing"){
+		alert(value);
+		// further computations
+		// send chosen filename back to server for selection of relevant data
+	}	
+}		

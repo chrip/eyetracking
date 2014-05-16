@@ -2,6 +2,40 @@ import csv
 import json
 import ajaxHandler
 import base64
+import os
+
+# search for relevant files in directory
+def listFiles():
+
+	csvfiles = []
+	imagefiles = []
+	
+	# get current path
+	currentpath = os.path.dirname(os.path.abspath(__file__))
+	for file in os.listdir(currentpath + "\data"):
+		if file.endswith(".csv"):
+			csvfiles.append(file)
+		if file.endswith(".jpg") or file.endswith(".png"):
+			imagefiles.append(file)
+			
+	content = "{\'selectiondata\':["
+			
+	# find pairs		
+	for csvfile in csvfiles:
+		for imagefile in imagefiles:
+			if (csvfile.partition(".")[0] == imagefile.partition(".")[0]):
+				f = csvfile.partition(".")[0]
+				content += "{\'name\':\'" + f + "\'},"
+				
+	content += "]}"
+	
+	selectionfile = open('selectiondata.html', 'w')
+	selectionfile.write(content)
+	selectionfile.close()
+	
+	#print content
+			
+	
 
 def extractCSVData(filename):
 
@@ -75,26 +109,32 @@ def prepareGazeData(data):
 	
 def prepareImage(filename):
 	
-	with open(filename+".jpg", 'rb') as image_file:
-		encoded_string = json.dumps(base64.b64encode(image_file.read()))
+	#check whether the image is already encoded, if yes do nothing
+	if not os.path.isfile(filename+".html"):
+		with open(filename+".jpg", 'rb') as image_file:
+			encoded_string = json.dumps(base64.b64encode(image_file.read()))
+			
+		# write image code into .html-file (no .json file possible due to ajaxHandler)
+		imagefile = open(filename+'.html', 'w')
+		imagefile.write(encoded_string)
+		imagefile.close()	
 		
-	# write image code into .html-file (no .json file possible due to ajaxHandler)
-	imagefile = open('imagecode.html', 'w')
-	imagefile.write(encoded_string)
-	imagefile.close()	
 
+		
+# get possible files
+listFiles()	
 	
 #read filename
 x = raw_input("Dateiname: ")
 
 # save serialized data
-data = extractCSVData(str(x))
-prepareGazeData(data)
+#data = extractCSVData(str(x))
+#prepareGazeData(data)
 
 # prepare image for ajax request from browser
 prepareImage(str(x))
 
-# debuging output
+# debugging output
 #print data
 
 ajaxHandler.start_server()
