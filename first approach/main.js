@@ -5,8 +5,6 @@
 	}
 	
 	receiveSelection();
-	receiveGazeData();
-	receiveImage();
 });
 
 function isAPIAvailable() {
@@ -90,15 +88,15 @@ function receiveSelection(){
 	$.ajax({
 		type: 'GET',
 		url: 'selectiondata.html',
-		datatype: 'json',
+		datatype: 'application/json',
 		success: function(data){
 			
-			var content = eval("("+data+")")
+			var content = eval("("+data+")");
 			
 			// add options to dropdown menu
 			for(var i = 0; i < content.selectiondata.length; i++){
 				n = content.selectiondata[i].name;
-				$('#fileSelection').append($('<option></option>').val(n).html(n));
+				$('#fileSelection').append($('<option></option>').val(n).html(n).attr("type", content.selectiondata[i].type));
 			}	
 			
 		},
@@ -111,14 +109,13 @@ function receiveSelection(){
 	});		
 };
 
-function receiveGazeData(){
-
-	console.log("try to receive gaze data");
+// load gaze data from server
+function receiveGazeData(file){
 	
 	$.ajax({
 		type: 'GET',
-		url: 'gazedata.html',
-		datatype: 'json',
+		url: 'data/'+ file + '_gazedata.html',
+		datatype: 'application/json',
 		success: function(data){
 			
 			// gaze data, saved as object structure
@@ -135,39 +132,41 @@ function receiveGazeData(){
 	});		
 };
 
-function receiveImage(){
-
-	console.log("try to load image");
+// load image from server 
+function receiveImage(data){
 	
 	$.ajax({
 		type: 'GET',
-		url: 'imagecode.html',
-		datatype: 'json',
+		url: 'data/' + data + '_imagedata.html',
+		datatype: 'application/json',
 		success: function(img){
 		
-			var file = "data:image/jpg;base64,"+JSON.parse(img);
-			
-			$("#imageDiv").append('<img src=\'' + file + '\' id=\'resultImage\'>');
-			
+			var filetype = $('#fileSelection').find('option:selected').attr('type');	
+			var file = "data:image/" + filetype + ";base64," + JSON.parse(img);
+
+			$('#resultImage').attr('src', file);
+
 		},	
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log("jq: " + JSON.stringify(jqXHR));
 			console.log("textStatus: " + textStatus);
 			console.log("errorThrown:" + errorThrown);
-			console.log('failed to load gaze data');			
+			console.log('failed to load image data');			
 		}
 	});
+
 };	
 		
-// call draw function etc.
-// TODO		
+// TODO			
+// call draw function etc.	
 function fileChanged(){
 
 	var value = $('#fileSelection').val();
 	
 	if(value != "donothing"){
-		alert(value);
-		// further computations
-		// send chosen filename back to server for selection of relevant data
+	
+		receiveImage(value);
+		receiveGazeData(value);
+
 	}	
 }		
