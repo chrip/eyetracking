@@ -3,6 +3,7 @@ import json
 import ajaxHandler
 import base64
 import os
+from PIL import Image
 
 
 def prepareGazeData(filename, data):
@@ -49,10 +50,15 @@ def listFiles():
 			if (csvfile.partition(".")[0] == imagefile.partition(".")[0]):
 				f = csvfile.partition(".")[0]
 				
-				#on startup create html files for all possible files to prepare request from server
+				# on startup create html files for all possible files to prepare request from server
 				prepareImage("data/"+imagefile);
 				prepareGazeData("data/"+f, extractCSVData("data/"+csvfile));
-				content += "{\'name\':\'" + f + "\', type:\'" + imagefile.partition(".")[2] + "\'},"
+				
+				# get image dimensions
+				img = Image.open("data/"+imagefile)
+				width, height = img.size
+				
+				content += "{\'name\':\'" + f + "\', type:\'" + imagefile.partition(".")[2] + "\', width:\'" + str(width) + "\', height:\'" + str(height) + "\'},"
 				
 	content += "]}"
 	

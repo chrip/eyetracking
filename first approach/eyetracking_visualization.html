@@ -10,21 +10,29 @@
 </head>
 
 <body>
-<h1>Eyetracking Visualisierung</h1>
-<!--<div><strong>Bild auswählen</strong><br><input type="file" id="imageFile" name="imageFile" /></div>
-<br>
-<div><strong>Blickpfaddatei auswählen</strong><br><input type="file" id="gazeDataFile" name="gazeDataFile" /></div>
--->
-
-<div align="left">
-	<strong>Dateiauswahl: </strong>
-	<select name="fileSelection" id="fileSelection" onchange="fileChanged()">
-	<option value=donothing>Bitte wählen</option>
-	</select>
+<div id="header">
+	<h1>Eyetracking Visualisierung</h1>
+	<!--<div><strong>Bild auswählen</strong><br><input type="file" id="imageFile" name="imageFile" /></div>
+	<br>
+	<div><strong>Blickpfaddatei auswählen</strong><br><input type="file" id="gazeDataFile" name="gazeDataFile" /></div>
+	-->
+	
+	<div align="left">
+		<strong>Dateiauswahl: </strong>
+		<select name="fileSelection" id="fileSelection" onchange="fileChanged()">
+		<option value=donothing>Bitte wählen</option>
+		</select>
+		<strong id="visTag" style="display: none;">Visualisierung: </strong>
+		<select name="visualizationSelection" id="visSelect" style="display: none;" onchange="">
+		<option value="gazePlot">Blickpfade</option>
+		<option value="heatmap">Heatmap</option>
+		</select>
+	</div>
 </div>
 
-<p><div id="imageDiv"><img id='resultImage'></div></p>
-<p><div id="dataDiv"></div></p>
+<div id="imageDiv" style="position:relative;">
+	<!--<img id='resultImage'></img>-->
+</div>
 
 </body>
 </html>
