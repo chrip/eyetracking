@@ -14,7 +14,7 @@ def prepareGazeData(filename, data):
 		datafile.write(data)
 		datafile.close()
 	
-	
+
 def prepareImage(filename):
 	
 	#check whether the image is already encoded, if yes do nothing
@@ -36,7 +36,7 @@ def listFiles():
 	
 	# get current path
 	currentpath = os.path.dirname(os.path.abspath(__file__))
-	for file in os.listdir(currentpath + "/data"):
+	for file in os.listdir(currentpath + "\data"):
 		if file.endswith(".csv"):
 			csvfiles.append(file)
 		if file.endswith(".jpg") or file.endswith(".png"):

@@ -1,99 +1,26 @@
 ﻿$(document).ready(function(){
-	/*
-	if(isAPIAvailable()){
-		$('#imageFile').bind('change', handleImageSelect);
-		$('#gazeDataFile').bind('change', handleGazeDataSelect);
-	}
-	*/
 	
 	// get available size for scailing of result image to fit it to screen
 	windowwidth  = $(window).width();
 	windowheight = $(window).height();
 	
 	headerheight = $('#header').height();
-	borderwidth = 0;	// stub for settings space
+	borderwidth = $('#settingsDiv').width();
 	
 	receiveSelection();
+	
+	// save gaze data globally
+	var g_content;
+	
+	// register color picker for fixation circles
+	registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
 });
 
 
 /*
-function isAPIAvailable() {
-    // Check for the various File API support.
-    if (window.File && window.FileReader && window.FileList && window.Blob) {
-      // Great success! All the File APIs are supported.
-      return true;
-    } else {
-      // source: File API availability - http://caniuse.com/#feat=fileapi
-      // source: <output> availability - http://html5doctor.com/the-output-element/
-      document.writeln('The HTML5 APIs used in this form are only available in the following browsers:<br />');
-      // 6.0 File API & 13.0 <output>
-      document.writeln(' - Google Chrome: 13.0 or later<br />');
-      // 3.6 File API & 6.0 <output>
-      document.writeln(' - Mozilla Firefox: 6.0 or later<br />');
-      // 10.0 File API & 10.0 <output>
-      document.writeln(' - Internet Explorer: Not supported (partial support expected in 10.0)<br />');
-      // ? File API & 5.1 <output>
-      document.writeln(' - Safari: Not supported<br />');
-      // ? File API & 9.2 <output>
-      document.writeln(' - Opera: Not supported');
-      return false;
-    }
-};
 
-function handleImageSelect(evt){
-	
-	var file = evt.target.files[0];
-	
-	console.log(file.name);
-	
-	openImage(file.name);  
-};
-
-// open image from local file system
-function openImage(file){
-
-	$("#imageDiv").append('<img src=\'' + file + '\' id=\'resultImage\'>');
-};
-
-function handleGazeDataSelect(evt){
-	
-	var file = evt.target.files[0];
-	
-	readCSV(file);  
-};
-  
-function readCSV(file){
-
-	var reader = new FileReader();
-	reader.readAsText(file);
-	reader.onload = function(evt){
-	
-		var csv = evt.target.result;
-		// delimiter '\t' does nor work somehow
-		var data = $.csv.toArrays(csv);
-		
-		var delimiter = '\t';
-		
-		for(var row in data){
-			for(var item in data[row]){
-				
-				console.log(data[row][item]);
-				
-				// columns of .csv file
-				//var output = data[row][item].split(delimiter);
-				
-				//console.log(output);
-				
-				//for(var i in output){
-					//console.log(output[i]);
-				//}
-			}
-		}	
-	}
-};
-
-
+// NOT NEEDED IN CURRENT VERSION
+ 
 // load gaze data from server
 function receiveGazeData(file){
 	
@@ -163,6 +90,25 @@ function receiveImage(data){
 };	
 */
 
+// register color picker
+// elem1: inner div element
+// elem2: constantly visible element
+function registerColorpicker(elem1, elem2){
+
+	elem1.ColorPicker({
+		flat:true, 
+		color: '#00ff00',
+		onChange: function(hsb, hex, rgb){
+			elem2.css('background', '#' + hex);
+		},
+		onSubmit: function(hsb, hex, rgb){
+			drawGazeplot();
+		}
+	});
+	elem1.removeAttr("style");
+	elem1.css({'z-index':'6', position:'absolute'});
+	elem1.hide();
+}
 
 // receive potential files for visualization 
 function receiveSelection(){
@@ -243,8 +189,6 @@ function receiveCanvasContent(value){
 				var filetype = $('#fileSelection').find('option:selected').attr('type');	
 				var file = "data:image/" + filetype + ";base64," + JSON.parse(img);
 
-				//$('#resultImage').removeAttr('style');
-				//$('#resultImage').attr('src', file);
 				g_imagesrc = file;
 				imgSrc = file;
 				
@@ -260,8 +204,7 @@ function receiveCanvasContent(value){
 				var w = $('#fileSelection').find('option:selected').attr('imgwidth');
 				var h = $('#fileSelection').find('option:selected').attr('imgheight');
 
-				var arr = scaleDimensions(w, h);
-				//$('#resultImage').width(arr[0]).height(arr[1]);		
+				var arr = scaleDimensions(w, h);	
 			}
 		}),
 		// receive gaze data
@@ -274,6 +217,8 @@ function receiveCanvasContent(value){
 				// gaze data, saved as object structure
 				gazeContent = eval("("+data+")");
 				
+				g_content = gazeContent;
+				
 				console.log(gazeContent);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -284,13 +229,41 @@ function receiveCanvasContent(value){
 			}
 		}))
 	.done(function(x){
-		// call draw function when image data is loaded completely
-		drawCanvas(imgSrc, gazeContent);
+		drawCanvas(imgSrc);
 	});	
 }		
 
-// TODO	
-// call draw function etc.	
+// show gaze plot fixation indices
+function showEnumeration(){
+	
+	if($('#showEnum').attr('checked'))
+		$('#enumlayer').show();
+	else
+		$('#enumlayer').hide();
+}
+
+// show gaze plot fixation indices
+function showGazePath(){
+	
+	if($('#showPath').attr('checked'))
+		$('#connectionlayer').show();
+	else
+		$('#connectionlayer').hide();
+}
+
+var cp_visible = false;
+
+// display color picker
+function showColorpicker(elem){
+	if(cp_visible){
+		$(elem).fadeOut(500);
+	}	
+	else{	
+		$(elem).fadeIn(500);
+	}	
+	cp_visible = !cp_visible;
+}
+
 function fileChanged(){
 
 	var value = $('#fileSelection').val();
@@ -300,70 +273,105 @@ function fileChanged(){
 		receiveCanvasContent(value);
 		$('#visTag').show();
 		$('#visSelect').show();
+		$('#settingsDiv').show();
 	}
 }	
 
 // visualize gaze plot
-/* TODO: 
- * - add options for colors, order, borders, connecting lines, scaling of radius...
- */
-function drawGazeplot(data){
-	
-	$('#imageDiv').append('<canvas id=\'layer2\' width=\'' + $('#layer1').width() + '\' height=\'' + $('#layer1').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	
-	var layer2 = document.getElementById("layer2");
-	var ctx2 = layer2.getContext("2d");
-	
-	ctx2.clearRect(0,0, $('#layer1').width(), $('#layer1').height());
-	
-	for(var i = 0; i < data.gazedata.length; i++){
-		var index = data.gazedata[i].fi;
-		var x = data.gazedata[i].fx;
-		var y = data.gazedata[i].fy;
-		var duration = data.gazedata[i].gd;
-		
-		// scale gaze data coordinates
-		var scaleX = $('#layer1').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-		var scaleY = $('#layer1').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+function drawGazeplot(){
 
+	// remove layers
+	if($('#connectionlayer').length > 0){
+		$('#connectionlayer').remove();
+	}
+	if($('#fixationlayer').length > 0){
+		$('#fixationlayer').remove();
+	}
+	if($('#enumlayer').length > 0){
+		$('#enumlayer').remove();
+	}
+	
+	// draw gaze plot components to seperate canvas layers
+	// connecting lines
+	$('#imageDiv').append('<canvas id=\'connectionlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var connectionlayer = document.getElementById("connectionlayer");
+	var connectionctx = connectionlayer.getContext("2d");
+	connectionctx.lineWidth = 4;
+	connectionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+	
+	// fixation circles
+	$('#imageDiv').append('<canvas id=\'fixationlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var fixationlayer = document.getElementById("fixationlayer");
+	var fixationctx = fixationlayer.getContext("2d");
+	// get color from color picker
+	fixationctx.fillStyle= $('#fixationColor').css("background-color");
+	fixationctx.lineWidth = 2;
+	fixationctx.strokeStyle="black";
+	fixationctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+	
+	// enumeration
+	$('#imageDiv').append('<canvas id=\'enumlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var enumlayer = document.getElementById("enumlayer");
+	var enumctx = enumlayer.getContext("2d");
+	enumctx.fillStyle = "black";
+	enumctx.font = "bold 16px Arial";
+	enumctx.textBaseline = "middle"; 
+	enumctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+	
+	// scale gaze data coordinates
+	var scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+	var scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+	
+	for(var i = 0; i < g_content.gazedata.length; i++){
+		var index = g_content.gazedata[i].fi;
+		var x = g_content.gazedata[i].fx;
+		var y = g_content.gazedata[i].fy;
+		var duration = g_content.gazedata[i].gd;
+		
 		// draw connecting lines
-		if(i < data.gazedata.length-1){
-			line(ctx2, x*scaleX, y*scaleY, data.gazedata[i+1].fx*scaleX, data.gazedata[i+1].fy*scaleY);
+		if(i < g_content.gazedata.length-1){
+			line(connectionctx, x*scaleX, y*scaleY, g_content.gazedata[i+1].fx*scaleX, g_content.gazedata[i+1].fy*scaleY);
 		}
 		
 		// draw fixation circles
-		circle(ctx2, x*scaleX, y*scaleY, (50 / 800 * duration) );
+		var radius = $('#radiusRange').val();
+		if($('#radiusSelect').find('option:selected').val() == "duration"){
+			radius = radius / 1000 * duration;
+		}
+		circle(fixationctx, x*scaleX, y*scaleY, radius);
 		
-		// print fixation index
-		ctx2.fillStyle = "black";
-		ctx2.font = "16px Arial";
-		ctx2.fillText(index, x*scaleX-5, y*scaleY+5);
+		// print fixation index in the middle of the fixation circle
+		var txtwidth = enumctx.measureText(index).width;
+		enumctx.fillText(index, x*scaleX-(txtwidth/2), y*scaleY);
 	}	
 	
 	// place canvases over each other
-	$('#layer1').css({position: 'absolute'});
-	$('#layer2').css({position: 'absolute'});
+	$('#backgroundlayer').css({position: 'absolute'});
+	$('#fixationlayer').css({position: 'absolute'});
+	$('#connectionlayer').css({position: 'absolute'});
+	$('#enumlayer').css({position: 'absolute'});
 }
 
+// draw line from (sx,sy) to (ex, ey)
 function line(ctx, sx, sy, ex, ey){
 
-	ctx.lineWidth = 2;
 	ctx.beginPath();
 	ctx.moveTo(sx, sy);
 	ctx.lineTo(ex, ey);
 	ctx.stroke();
 }
 
+//draw circle with center at (x,y) and radius r
 function circle(ctx, x, y, r){
 
 	ctx.beginPath();
 	ctx.arc(x, y, r, 0, 2 * Math.PI);
-	ctx.fillStyle="blue";
 	ctx.fill();
+	// draw border around circle
+	ctx.stroke();
 }	
 
-
-function drawCanvas(src, content){
+function drawCanvas(src){
 	
 	var w = $('#fileSelection').find('option:selected').attr('imgwidth');
 	var h = $('#fileSelection').find('option:selected').attr('imgheight');
@@ -372,15 +380,15 @@ function drawCanvas(src, content){
 	var arr = scaleDimensions(w, h);	
 	
 	// check whether canvas already exists
-	if($('#layer1').length > 0){
-		$('#layer1').remove();
+	if($('#backgroundlayer').length > 0){
+		$('#backgroundlayer').remove();
 	}
 	// create canvas with correct dimensions
-	$('#imageDiv').append('<canvas id=\'layer1\' width=\'' + arr[0] + '\' height=\'' + arr[1] + '\' style="border:3px solid #000000; z-index:1"></canvas>');
+	$('#imageDiv').append('<canvas id=\'backgroundlayer\' width=\'' + arr[0] + '\' height=\'' + arr[1] + '\' style="border:3px solid #000000; z-index:1"></canvas>');
 	
 	
-	var layer1 = document.getElementById("layer1");
-	var ctx1 = layer1.getContext("2d");
+	var backgroundlayer = document.getElementById("backgroundlayer");
+	var ctx1 = backgroundlayer.getContext("2d");
 	ctx1.clearRect(0,0, arr[0], arr[1]);
 	
 	// draw input image as background to canvas
@@ -390,13 +398,12 @@ function drawCanvas(src, content){
 	}
 	imageObj.src = src;
 	
-	
 	// specific draw functions
 	var value = $('#visSelect').val();
 	
 	// draw gazeplot on startup
 	if(value == "gazePlot"){
-		drawGazeplot(content);
+		drawGazeplot();
 	}
 	
 }
