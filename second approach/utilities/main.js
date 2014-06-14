@@ -14,11 +14,6 @@
 	var unsorted_content;
 	var g_imgSrc;
 	
-	// register color picker for fixation circles
-	registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
-	// register color picker for connecting lines
-	registerColorpicker($('#lineColorpicker'), $('#lineColor'));
-	
 });
 
 // register color picker
@@ -33,7 +28,11 @@ function registerColorpicker(elem1, elem2){
 			elem2.css('background', '#' + hex);
 		},
 		onSubmit: function(hsb, hex, rgb){
-			drawGazeplot();
+		
+			if($('#visSelect').val() == "gazeplot")
+				drawGazeplot();
+			else if($('#visSelect').val() == "heatmap")
+				drawHeatmap();
 		}
 	});
 	elem1.removeAttr("style");
@@ -234,22 +233,36 @@ function drawHeatmap(){
 	if($('#resultlayer').length > 0){
 		$('#resultlayer').remove();
 	}
-/*	
-	// remove heat map layer
-	if($('#heatmapArea').length > 0){
-		$('#heatmapArea').remove();
-	}
-*/
+
 	$('#imageDiv').append('<div id=\'heatmapArea\' />');
 	
 	$('#heatmapArea').width($('#backgroundlayer').width()).height($('#backgroundlayer').height());
 	$('#heatmapArea').css("border", "3px solid #000000");
 	
 	// heatmap settings
+	var radius = $('#heatmapRadius').val();
+	var opacity = $('#heatmapOpacity').val();
+	var countdefault;
+	if($('#countSelect').find('option:selected').val() == "default")
+		countdefault = true;
+	else	
+		countdefault = false;
+	var c1 = $('#c1Color').css("background-color");
+	var c2 = $('#c2Color').css("background-color");
+	var c3 = $('#c3Color').css("background-color");
+	
+	var c1rgb = c1.match(/\d+/g);
+	var c2rgb = c2.match(/\d+/g);
+	var c3rgb = c3.match(/\d+/g);
+	
+	var c15 = "rgb(" + Math.min(c1rgb[0]+c2rgb[0], 255) + ", " + Math.min(c1rgb[1]+c2rgb[1], 255) + ", " + Math.min(c1rgb[2]+c2rgb[2], 255) + ")";
+	var c25 = "rgb(" + Math.min(c2rgb[0]+c3rgb[0], 255) + ", " + Math.min(c2rgb[1]+c3rgb[1], 255) + ", " + Math.min(c2rgb[2]+c3rgb[2], 255) + ")";
+		
 	var config = {
 		element: document.getElementById("heatmapArea"),
-		radius:  30,
-		opacity: 90
+		radius:  radius,
+		opacity: opacity,
+		gradient: { 0.45: c1, 0.55: c15, 0.65: c2, 0.95: c25, 1.0: c3}
 	};
 	
 	// heatmap creation
@@ -264,13 +277,17 @@ function drawHeatmap(){
 		
 		var x  = g_content.gazedata[i].fx;
 		var y  = g_content.gazedata[i].fy;	
-		var count = Math.round(g_content.gazedata[i].gd / 100);
+		var count;
+		if(!countdefault){
+			count = Math.round(g_content.gazedata[i].gd / 100);
+		}
+		else if(countdefault){
+			count = 1;
+		}
 		
 		// add point to heatmap
 		heatmap.store.addDataPoint(x*scaleX, y*scaleY, count);
 	}
-	
-	//$('#backgroundlayer').show();
 	
 	// give heat map canvas an id
 	$('#heatmapArea').children('canvas').eq(0).attr('id', 'heatmaplayer');
@@ -440,9 +457,26 @@ function drawCanvas(src){
 		
 		// draw gazeplot on startup
 		if(value == "gazeplot"){
+		
+			// register color picker for fixation circles
+			registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
+			// register color picker for connecting lines
+			registerColorpicker($('#lineColorpicker'), $('#lineColor'));
+		
 			drawGazeplot();
 		}
 		if(value == "heatmap"){
+		
+			// register color picker
+			registerColorpicker($('#c1Colorpicker'), $('#c1Color'));
+			registerColorpicker($('#c2Colorpicker'), $('#c2Color'));
+			registerColorpicker($('#c3Colorpicker'), $('#c3Color'));
+			
+			// place color pickers
+			$('#c1Colorpicker').css('margin-top', '30px').css('margin-left', '10px');
+			$('#c2Colorpicker').css('margin-top', '30px').css('margin-left', '73px');
+			$('#c3Colorpicker').css('margin-top', '30px').css('margin-left', '136px');
+			
 			drawHeatmap();
 		}	
 	}
