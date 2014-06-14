@@ -10,6 +10,7 @@
 <script type='text/javascript' src='utilities/colorpicker/colorpicker.js'></script>
 <script type='text/javascript' src='utilities/FileSaver.js'></script>
 <script type='text/javascript' src='utilities/canvas-toBlob.js'></script>
+<script type='text/javascript' src='utilities/heatmap.js'></script>
 </head>
 
 <body>
@@ -22,8 +23,8 @@
 		<option value=donothing>Bitte wählen</option>
 		</select>
 		<strong id="visTag" style="display: none;">Visualisierung: </strong>
-		<select name="visualizationSelection" id="visSelect" style="display: none;" onchange="">
-		<option value="gazePlot">Blickpfade</option>
+		<select name="visualizationSelection" id="visSelect" style="display: none;" onchange="visualizationChanged()">
+		<option value="gazeplot">Blickpfade</option>
 		<option value="heatmap">Heatmap</option>
 		</select>
 		<input type="button" id="saveButton" value="Ergebnis speichern" style="display: none;" onclick="saveResult()">
@@ -31,7 +32,7 @@
 	<br>
 </div>
 
-<div id="settingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
+<div id="gazeplotSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
 	<strong>Einstellungen:</strong>
 	<p><input type="checkbox" name="showEnum" id="showEnum" value="showEnum" onchange="drawGazeplot()" checked="checked"> Zeige Reihenfolge</p>
 	<p><input type="checkbox" name="showPath" id="showPath" value="showPath" onchange="drawGazeplot()" checked="checked"> Zeige Blickpfad</p>
@@ -52,6 +53,10 @@
 		<p style="margin-left:35px">Linienfarbe</p>
 	</div>
 	<div id="lineColorpicker"></div>
+</div>
+
+<div id="heatmapSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
+	<strong>Einstellungen:</strong>
 </div>
 
 <div id="imageDiv" style="position:relative; margin-left:200px"></div>

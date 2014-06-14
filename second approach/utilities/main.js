@@ -5,7 +5,7 @@
 	windowheight = $(window).height();
 	
 	headerheight = $('#header').height();
-	borderwidth = $('#settingsDiv').width();
+	borderwidth = $('#gazeplotSettingsDiv').width();
 	
 	receiveSelection();
 	
@@ -135,7 +135,6 @@ function receiveCanvasContent(value){
 				var w = $('#fileSelection').find('option:selected').attr('imgwidth');
 				var h = $('#fileSelection').find('option:selected').attr('imgheight');
 
-				var arr = scaleDimensions(w, h);	
 			}
 		}),
 		// receive gaze data
@@ -198,13 +197,107 @@ function fileChanged(){
 		receiveCanvasContent(value);
 		$('#visTag').show();
 		$('#visSelect').show();
-		$('#settingsDiv').show();
 		$('#saveButton').show();
+		
+		var visualization = $('#visSelect').val();
+		if(visualization == "gazeplot"){
+			$('#gazeplotSettingsDiv').show();
+			$('#heatmapSettingsDiv').hide();
+		}	
+		else if(visualization == "heatmap"){
+			$('#heatmapSettingsDiv').show();
+			$('#gazeplotSettingsDiv').hide();
+		}
 	}
 }	
 
+function visualizationChanged(){
+	
+	var visualization = $('#visSelect').val();
+	
+	if(visualization == "gazeplot"){
+		$('#gazeplotSettingsDiv').show();
+		$('#heatmapSettingsDiv').hide();
+	}	
+	else if(visualization == "heatmap"){
+		$('#heatmapSettingsDiv').show();
+		$('#gazeplotSettingsDiv').hide();
+	}
+	
+	drawCanvas(g_imgSrc);
+}
+
+// visualize heatmap
+function drawHeatmap(){
+
+	// remove gaze plot layer if present
+	if($('#resultlayer').length > 0){
+		$('#resultlayer').remove();
+	}
+/*	
+	// remove heat map layer
+	if($('#heatmapArea').length > 0){
+		$('#heatmapArea').remove();
+	}
+*/
+	$('#imageDiv').append('<div id=\'heatmapArea\' />');
+	
+	$('#heatmapArea').width($('#backgroundlayer').width()).height($('#backgroundlayer').height());
+	$('#heatmapArea').css("border", "3px solid #000000");
+	
+	// heatmap settings
+	var config = {
+		element: document.getElementById("heatmapArea"),
+		radius:  30,
+		opacity: 90
+	};
+	
+	// heatmap creation
+	var heatmap = h337.create(config);
+	
+	// scale gaze data coordinates
+	var scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+	var scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+	
+	// pass data to heatmap
+	for(var i = 0; i < unsorted_content.gazedata.length; i++){
+		
+		var x  = g_content.gazedata[i].fx;
+		var y  = g_content.gazedata[i].fy;	
+		var count = Math.round(g_content.gazedata[i].gd / 100);
+		
+		// add point to heatmap
+		heatmap.store.addDataPoint(x*scaleX, y*scaleY, count);
+	}
+	
+	//$('#backgroundlayer').show();
+	
+	// give heat map canvas an id
+	$('#heatmapArea').children('canvas').eq(0).attr('id', 'heatmaplayer');
+	
+	// merged canvas
+	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var resultlayer = document.getElementById("resultlayer");
+	var resultctx = resultlayer.getContext("2d");
+	resultctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+
+	var backgroundlayer = document.getElementById("backgroundlayer");
+	var heatmaplayer = document.getElementById("heatmaplayer");
+	
+	resultctx.drawImage(backgroundlayer,0,0);
+	resultctx.drawImage(heatmaplayer, 0, 0);
+	
+	$('#resultlayer').css({position: 'absolute'});
+	$('#heatmapArea').remove();
+}
+
 // visualize gaze plot
 function drawGazeplot(){
+
+	// remove heatmap layer if present
+	if($('#heatmapArea').length > 0){
+		$('#heatmapArea').remove();
+	}
 
 	// remove layer
 	if($('#resultlayer').length > 0){
@@ -346,9 +439,12 @@ function drawCanvas(src){
 		var value = $('#visSelect').val();
 		
 		// draw gazeplot on startup
-		if(value == "gazePlot"){
+		if(value == "gazeplot"){
 			drawGazeplot();
 		}
+		if(value == "heatmap"){
+			drawHeatmap();
+		}	
 	}
 	imageObj.src = src;
 	
