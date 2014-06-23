@@ -387,11 +387,11 @@ function drawHeatmap(){
 	// pass data to heatmap
 	for(var i = 0; i < unsorted_content.gazedata.length; i++){
 		
-		var x  = g_content.gazedata[i].fx;
-		var y  = g_content.gazedata[i].fy;	
+		var x  = unsorted_content.gazedata[i].fx;
+		var y  = unsorted_content.gazedata[i].fy;	
 		var count;
 		if(!countdefault){
-			count = Math.round(g_content.gazedata[i].gd / 100);
+			count = Math.round(unsorted_content.gazedata[i].gd / 100);
 		}
 		else if(countdefault){
 			count = 1;
@@ -417,7 +417,7 @@ function drawHeatmap(){
 	resultctx.drawImage(heatmaplayer, 0, 0);
 	
 	$('#resultlayer').css({position: 'absolute'});
-	//$('#heatmapArea').remove();
+	$('#heatmapArea').remove();
 }
 
 // visualize gaze plot

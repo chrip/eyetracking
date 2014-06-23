@@ -76,7 +76,7 @@ class AjaxHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         mimetype='text/html'
         sendStaticFileReply = True
       if self.path.endswith(".jpg"):
-        mimetype='image/jpg'
+        mimetype='image/jpeg'
         sendStaticFileReply = True
       if self.path.endswith(".gif"):
         mimetype='image/gif'
@@ -86,6 +86,12 @@ class AjaxHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         sendStaticFileReply = True
       if self.path.endswith(".css"):
         mimetype='text/css'
+        sendStaticFileReply = True
+      if self.path.endswith(".png"):
+        mimetype='image/png'
+        sendStaticFileReply = True
+      if self.path.endswith(".csv"):
+        mimetype='text/comma-separated-values'
         sendStaticFileReply = True
 
       if sendStaticFileReply == True:
