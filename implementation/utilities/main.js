@@ -49,11 +49,11 @@ function receiveSelection(){
 	
 	$.ajax({
 		type: 'GET',
-		url: 'selectiondata.html',
+		url: 'selectiondata.json',
 		datatype: 'application/json',
 		success: function(data){
 			
-			var content = eval("("+data+")");
+			var content = data;
 			
 			console.log(content);
 			
@@ -114,32 +114,8 @@ function receiveCanvasContent(value){
 	
 	$.when(
 		// receive image
-		$.ajax({
-			type: 'GET',
-			url: 'data/' + value + '_imagedata.html',
-			datatype: 'application/json',
-			success: function(img){
-				
-				var filetype = $('#fileSelection').find('option:selected').attr('type');	
-				var file = "data:image/" + filetype + ";base64," + JSON.parse(img);
-
-				g_imgSrc = file;
-				imgSrc = file;
-				
-			},	
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("jq: " + JSON.stringify(jqXHR));
-				console.log("textStatus: " + textStatus);
-				console.log("errorThrown:" + errorThrown);
-				console.log('failed to load image data');			
-			},
-			complete: function(jqXHR, textStatus){
-
-				var w = $('#fileSelection').find('option:selected').attr('imgwidth');
-				var h = $('#fileSelection').find('option:selected').attr('imgheight');
-
-			}
-		}),
+		$("#imageDiv").append('<img id="foobar" src="data/'+value +'.jpg" >'),
+   
 		// receive gaze data
 		$.ajax({
 			type: 'GET',
@@ -302,7 +278,7 @@ function drawAttentionmap(){
 	$('#attentionmapArea').children('canvas').eq(0).attr('id', 'attentionmaplayer');
 
 	// cover layer
-	$('#imageDiv').append('<canvas id=\'coverlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	$('#imageDiv').append('<canvas id="coverlayer" width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
 	var coverlayer = document.getElementById("coverlayer");
 	var coverctx = coverlayer.getContext("2d");
 	coverctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());

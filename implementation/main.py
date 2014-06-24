@@ -36,14 +36,14 @@ def listFiles():
 	
 	# get current path
 	currentpath = os.path.dirname(os.path.abspath(__file__))
-	for file in os.listdir(currentpath + "\data"):
+	for file in os.listdir(currentpath + "/data"):
 		if file.endswith(".csv"):
 			csvfiles.append(file)
 		if file.endswith(".jpg") or file.endswith(".png"):
 			imagefiles.append(file)
 			
-	content = "{\'selectiondata\':["
-			
+	content = "{\"selectiondata\":["
+	firstObject = True
 	# find pairs		
 	for csvfile in csvfiles:
 		for imagefile in imagefiles:
@@ -58,11 +58,12 @@ def listFiles():
 				img = Image.open("data/"+imagefile)
 				width, height = img.size
 				
-				content += "{\'name\':\'" + f + "\', type:\'" + imagefile.partition(".")[2] + "\', width:\'" + str(width) + "\', height:\'" + str(height) + "\'},"
-				
+				if not firstObject:
+					content += ","
+				content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"width\":" + str(width) + ", \"height\":" + str(height) + "}"
+				firstObject = False
 	content += "]}"
-	
-	selectionfile = open('selectiondata.html', 'w')
+	selectionfile = open('selectiondata.json', 'w')
 	selectionfile.write(content)
 	selectionfile.close()
 	
@@ -75,7 +76,7 @@ def extractCSVData(filename):
 	reader = csv.reader(csvFile)
 	
 	# string to create json object
-	completeList = "{\'gazedata\':[" 
+	completeList = "{\"gazedata\":[" 
 	
 	rownum = 0
 	for row in reader:
@@ -92,16 +93,16 @@ def extractCSVData(filename):
 			
 				# fixation x coordinate
 				if header[colnum] == "FixationPointX (MCSpx)":
-					completeList += "\'fx\':" + col + ","
+					completeList += "\"fx\":" + col + ","
 				# fixation y coordinate	
 				elif header[colnum] == "FixationPointY (MCSpx)":
-					completeList += "\'fy\':" + col + "}, "
+					completeList += "\"fy\":" + col + "}, "
 				# gaze duration	
 				elif header[colnum] == "GazeEventDuration":
-					completeList += "\'gd\':" + col + ","
+					completeList += "\"gd\":" + col + ","
 				# fixation index
 				elif header[colnum] == "FixationIndex":
-					completeList += "\'fi\':" + col + ","
+					completeList += "\"fi\":" + col + ","
 				
 				colnum += 1
 			
