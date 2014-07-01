@@ -51,11 +51,9 @@ function receiveSelection(){
 		type: 'GET',
 		url: 'selectiondata.json',
 		datatype: 'application/json',
-		success: function(data){
+		success: function(content){
 			
-			var content = data;
-			
-			console.log(content);
+			//console.log("receive selection: " + content);
 			
 			// add options to dropdown menu
 			for(var i = 0; i < content.selectiondata.length; i++){
@@ -114,19 +112,46 @@ function receiveCanvasContent(value){
 	
 	$.when(
 		// receive image
-		$("#imageDiv").append('<img id="foobar" src="data/'+value +'.jpg" >'),
+		//$("#imageDiv").append('<img id="foobar" src="data/'+value +'.jpg" >'),
+    $.ajax({
+			type: 'GET',
+			url: 'data/' + value + '_imagedata.html',
+			datatype: 'application/json',
+			success: function(img){
+				
+				var filetype = $('#fileSelection').find('option:selected').attr('type');	
+				var file = "data:image/" + filetype + ";base64," + JSON.parse(img);
+
+				g_imgSrc = file;
+				imgSrc = file;
+				
+			},	
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log("jq: " + JSON.stringify(jqXHR));
+				console.log("textStatus: " + textStatus);
+				console.log("errorThrown:" + errorThrown);
+				console.log('failed to load image data');			
+			},
+			complete: function(jqXHR, textStatus){
+
+				var w = $('#fileSelection').find('option:selected').attr('imgwidth');
+				var h = $('#fileSelection').find('option:selected').attr('imgheight');
+
+			}
+		}),
    
 		// receive gaze data
 		$.ajax({
 			type: 'GET',
-			url: 'data/'+ value + '_gazedata.html',
+			url: 'data/' + value + '_gazedata.json',
 			datatype: 'application/json',
 			success: function(data){
-					
-				// gaze data, saved as object structure
-				gazeContent = eval("("+data+")");
 				
-				g_content = gazeContent;
+				//console.log("receive gazedata: " + data);
+				
+        g_content = data;
+
+        // create backup json object which won't be sorted
 				unsorted_content = JSON.parse(JSON.stringify(g_content));
 				
 			},
@@ -271,7 +296,7 @@ function drawAttentionmap(){
 		}
 		
 		// add point to heatmap
-		attentionmap.store.addDataPoint(x*scaleX, y*scaleY, count);
+		attentionmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
 	}
 	
 	// give attentionmap canvas an id
@@ -372,9 +397,9 @@ function drawHeatmap(){
 		else if(countdefault){
 			count = 1;
 		}
-		
+    
 		// add point to heatmap
-		heatmap.store.addDataPoint(x*scaleX, y*scaleY, count);
+		heatmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
 	}
 	
 	// give heat map canvas an id
@@ -521,16 +546,18 @@ function drawCanvas(src){
 
 	// get correct canvas size
 	var arr = scaleDimensions(w, h);	
+  var imgW = Math.floor(arr[0]);
+  var imgH = Math.floor(arr[1]);
 	
 	// check whether canvas already exists
 	if($('#backgroundlayer').length > 0){
 		$('#backgroundlayer').remove();
 	}
 	// create canvas with correct dimensions
-	$('#imageDiv').append('<canvas id=\'backgroundlayer\' width=\'' + arr[0] + '\' height=\'' + arr[1] + '\' style="border:3px solid #000000; z-index:1"></canvas>');
+	$('#imageDiv').append('<canvas id=\'backgroundlayer\' width=\'' + imgW + '\' height=\'' + imgH + '\' style="border:3px solid #000000; z-index:1"></canvas>');
 	var backgroundlayer = document.getElementById("backgroundlayer");
 	var ctx1 = backgroundlayer.getContext("2d");
-	ctx1.clearRect(0,0, arr[0], arr[1]);
+	ctx1.clearRect(0,0, imgW, imgH);
 
 	$('#backgroundlayer').css({position: 'absolute'});
 	$('#backgroundlayer').hide();
@@ -538,7 +565,7 @@ function drawCanvas(src){
 	// draw input image as background to canvas
 	imageObj = new Image();
 	imageObj.onload = function(){
-		ctx1.drawImage(imageObj, 0, 0, arr[0], arr[1]);
+		ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
 		
 		// specific draw functions
 		var value = $('#visSelect').val();
@@ -553,6 +580,7 @@ function drawCanvas(src){
 		
 			drawGazeplot();
 		}
+    
 		if(value == "heatmap"){
 		
 			// register color picker
