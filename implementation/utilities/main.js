@@ -13,7 +13,9 @@
 	var g_content;
 	var unsorted_content;
 	var g_imgSrc;
-	
+
+  // default: uncheck fit-to-screen checkbox 
+  $('input[name=fitToScreen]').attr('checked', false);
 });
 
 // register color picker
@@ -194,6 +196,9 @@ function saveResult(){
 
 function fileChanged(){
 
+  $('input[name=fitToScreen]').attr('checked', false);
+  fitted = false;
+  
 	var value = $('#fileSelection').val();
 		
 	if(value != "donothing"){
@@ -202,6 +207,8 @@ function fileChanged(){
 		$('#visTag').show();
 		$('#visSelect').show();
 		$('#saveButton').show();
+    $('#fitToScreen').show();
+    $('#ftsTag').show();
 		
 		var visualization = $('#visSelect').val();
 		if(visualization == "gazeplot"){
@@ -248,6 +255,8 @@ function visualizationChanged(){
 // visualize attentionmap
 function drawAttentionmap(){
 
+  $('#attentionmapSettingsDiv').height($('#backgroundlayer').height());
+
 	// remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
 		$('#resultlayer').remove();
@@ -278,10 +287,15 @@ function drawAttentionmap(){
 	// heatmap creation
 	var attentionmap = h337.create(config);
 	
-	// scale gaze data coordinates
-	var scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-	var scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
-	
+  var scaleX = 1;
+  var scaleY = 1;
+  
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+	}
+  
 	// pass data to heatmap
 	for(var i = 0; i < unsorted_content.gazedata.length; i++){
 		
@@ -342,7 +356,9 @@ function drawAttentionmap(){
 // visualize heatmap
 function drawHeatmap(){
 
-	// remove gaze plot layer if present
+  $('#heatmapSettingsDiv').height($('#backgroundlayer').height());
+	
+  // remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
 		$('#resultlayer').remove();
 	}
@@ -381,10 +397,15 @@ function drawHeatmap(){
 	// heatmap creation
 	var heatmap = h337.create(config);
 	
-	// scale gaze data coordinates
-	var scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-	var scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
-	
+  var scaleX = 1;
+  var scaleY = 1;
+  
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+	}
+  
 	// pass data to heatmap
 	for(var i = 0; i < unsorted_content.gazedata.length; i++){
 		
@@ -423,6 +444,8 @@ function drawHeatmap(){
 
 // visualize gaze plot
 function drawGazeplot(){
+      
+  $('#gazeplotSettingsDiv').height($('#backgroundlayer').height());
 
 	// remove heatmap layer if present
 	if($('#heatmapArea').length > 0){
@@ -465,10 +488,15 @@ function drawGazeplot(){
 	enumctx.textBaseline = "middle"; 
 	enumctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
 	
-	// scale gaze data coordinates
-	var scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-	var scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
-	
+  var scaleX = 1;
+  var scaleY = 1;
+  
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+	}
+  
 	// sort gaze data based on duration from long to short
 	g_content.gazedata.sort(function(a,b){
 		return (b.gd > a.gd) ? 1 : ((b.gd < a.gd) ? -1 : 0);
@@ -539,16 +567,32 @@ function circle(ctx, x, y, r){
 	ctx.stroke();
 }	
 
+// fit image to screen
+var fitted = false;
+
+function fitImageToScreen(){
+  
+  fitted = !(fitted);
+  
+  drawCanvas(g_imgSrc);
+}
+
 function drawCanvas(src){
 	
 	var w = $('#fileSelection').find('option:selected').attr('imgwidth');
 	var h = $('#fileSelection').find('option:selected').attr('imgheight');
 
-	// get correct canvas size
-	var arr = scaleDimensions(w, h);	
-  var imgW = Math.floor(arr[0]);
-  var imgH = Math.floor(arr[1]);
-	
+  var imgW = w;
+  var imgH = h;
+  
+  // if fit to screen is selected
+  if(fitted){
+    // get correct canvas size
+    var arr = scaleDimensions(w, h);	
+    imgW = Math.floor(arr[0]);
+    imgH = Math.floor(arr[1]);
+  }
+  
 	// check whether canvas already exists
 	if($('#backgroundlayer').length > 0){
 		$('#backgroundlayer').remove();
@@ -565,7 +609,7 @@ function drawCanvas(src){
 	// draw input image as background to canvas
 	imageObj = new Image();
 	imageObj.onload = function(){
-		ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
+  ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
 		
 		// specific draw functions
 		var value = $('#visSelect').val();

@@ -17,20 +17,23 @@
 <div id="header">
 	<h1>Eyetracking Visualisierung</h1>
 	
-	<div align="left">
-		<strong>Dateiauswahl: </strong>
-		<select name="fileSelection" id="fileSelection" onchange="fileChanged()">
-		<option value=donothing>Bitte wählen</option>
-		</select>
-		<strong id="visTag" style="display: none;">Visualisierung: </strong>
-		<select name="visualizationSelection" id="visSelect" style="display: none;" onchange="visualizationChanged()">
-		<option value="gazeplot">Blickpfade</option>
-		<option value="heatmap">Heatmap</option>
-		<option value="attentionmap">Attentionmap</option>
-		</select>
-		<input type="button" id="saveButton" value="Ergebnis speichern" style="display: none;" onclick="saveResult()">
-	</div>
-	<br>
+  <div style="width:100%; background:#cccccc;">
+    <div align="left">
+      <strong>Dateiauswahl: </strong>
+      <select name="fileSelection" id="fileSelection" onchange="fileChanged()">
+      <option value=donothing>Bitte wählen</option>
+      </select>
+      <strong id="visTag" style="display: none;">Visualisierung: </strong>
+      <select name="visualizationSelection" id="visSelect" style="display: none;" onchange="visualizationChanged()">
+      <option value="gazeplot">Blickpfade</option>
+      <option value="heatmap">Heatmap</option>
+      <option value="attentionmap">Attentionmap</option>
+      </select>
+      <input type="button" id="saveButton" value="Ergebnis speichern" style="display: none;" onclick="saveResult()">
+      <input type="checkbox" name="fitToScreen" id="fitToScreen" value="fitToScreen" style="display: none;" onchange="fitImageToScreen()"><strong id="ftsTag" style="display: none"> Fit-to-Screen</strong></p>
+    </div>
+    <br>
+  </div>
 </div>
 
 <div id="gazeplotSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
