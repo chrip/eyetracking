@@ -78,6 +78,8 @@ def extractCSVData(filename):
   completeList = "{\"gazedata\":[" 
   
   rownum = 0
+  line = ""
+  lastline = ""
   for row in reader:
     # save header row
     if rownum == 0:
@@ -85,32 +87,49 @@ def extractCSVData(filename):
     else:
       colnum = 0
       
-      completeList += "{"
+      completeList += "{"  
 
       for col in row:
-        # select relevant data and save it to separate lists
-
+        # select relevant data and save it to separate list
+        
+        # skip line if not suitable to viewed file
+        if header[colnum] == 'MediaName' and col == '':
+          completeList = completeList[:-1]
+          break
+        
         # fixation x coordinate
         if header[colnum] == "FixationPointX (MCSpx)":
-          completeList += "\"fx\":" + col + ","
+          #completeList += "\"fx\":" + col + ","
+          line += "\"fx\":" + col + ","
         # fixation y coordinate  
         elif header[colnum] == "FixationPointY (MCSpx)":
-          completeList += "\"fy\":" + col + "},"
+          #completeList += "\"fy\":" + col + "},"
+          line += "\"fy\":" + col + "},"
         # gaze duration  
         elif header[colnum] == "GazeEventDuration":
-          completeList += "\"gd\":" + col + ","
+          #completeList += "\"gd\":" + col + ","
+          line += "\"gd\":" + col + ","
         # fixation index
         elif header[colnum] == "FixationIndex":
-          completeList += "\"fi\":" + col + ","
-        
+          #completeList += "\"fi\":" + col + ","
+          line += "\"fi\":" + col + ","
+                    
         colnum += 1
+
+      # force valid json
+      if not line == lastline:  
+        completeList += line
+      elif completeList[len(completeList)-1] == "{":
+        completeList = completeList[:-1]
+      lastline = line
+      line = ""
       
     rownum += 1    
     
   # remove last comma  
   completeList = completeList[:-1]
   completeList += "]}"
-
+  
   csvFile.close() 
 
   return completeList
