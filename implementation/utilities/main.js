@@ -60,7 +60,7 @@ function receiveSelection(){
 			// add options to dropdown menu
 			for(var i = 0; i < content.selectiondata.length; i++){
 				n = content.selectiondata[i].name;
-				$('#fileSelection').append($('<option></option>').val(n).html(n).attr("type", content.selectiondata[i].type).attr("imgWidth", content.selectiondata[i].width).attr("imgHeight", content.selectiondata[i].height));
+				$('#fileSelection').append($('<option></option>').val(n).html(n).attr("type", content.selectiondata[i].type).attr("imgWidth", content.selectiondata[i].width).attr("imgHeight", content.selectiondata[i].height).attr("count", content.selectiondata[i].count));
 			}	
 			
 		},
@@ -114,7 +114,6 @@ function receiveCanvasContent(value){
 	
 	$.when(
 		// receive image
-		//$("#imageDiv").append('<img id="foobar" src="data/'+value +'.jpg" >'),
     $.ajax({
 			type: 'GET',
 			url: 'data/' + value + '_imagedata.html',
@@ -140,39 +139,77 @@ function receiveCanvasContent(value){
 				var h = $('#fileSelection').find('option:selected').attr('imgheight');
 
 			}
-		}),
-   
+		})//
+    
 		// receive gaze data
-		$.ajax({
-			type: 'GET',
-			url: 'data/' + value + '_gazedata.json',
-			datatype: 'application/json',
-			success: function(data){
+		// $.ajax({
+			// type: 'GET',
+			// url: 'data/' + value + '_gazedata.json',
+			// datatype: 'application/json',
+			// success: function(data){
 				
-				//console.log("receive gazedata: " + data);
+				// console.log(data);
 				
-        g_content = data;
+        // g_content = data;
 
-        // create backup json object which won't be sorted
-				unsorted_content = JSON.parse(JSON.stringify(g_content));
+        // // create backup json object which won't be sorted
+				// unsorted_content = JSON.parse(JSON.stringify(g_content));
 				
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("jq: " + JSON.stringify(jqXHR));
-				console.log("textStatus: " + textStatus);
-				console.log("errorThrown:" + errorThrown);
-				console.log('failed to load gaze data');			
-			}
-		}))
+			// },
+			// error: function(jqXHR, textStatus, errorThrown) {
+				// console.log("jq: " + JSON.stringify(jqXHR));
+				// console.log("textStatus: " + textStatus);
+				// console.log("errorThrown:" + errorThrown);
+				// console.log('failed to load gaze data');			
+			// }
+		// })
+    )
 	.done(function(x){
+    receiveGD(value);
+    manageProbands($('#fileSelection').find('option:selected').attr('count'));
 		drawCanvas(imgSrc);
 	});	
 }		
+
+var ctnt = [];
+var unsorted_ctnt = [];
+
+function receiveGD(value){
+  
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+
+  
+  for(var i = 0; i < idx; i++){
+  
+    var j = (i < 10 ? '0' : '');
+    var s = value + "_" + j + parseInt(i+1);
+    
+    $.ajax({
+      type: 'GET',
+      url: 'data/' + s + '_gazedata.json',
+      datatype: 'application/json',
+      // make async call to save data in the right array slot
+      async: false,
+      success: function(data){
+        ctnt[i] = data; 
+        unsorted_ctnt[i] = JSON.parse(JSON.stringify(data));
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        console.log("jq: " + JSON.stringify(jqXHR));
+        console.log("textStatus: " + textStatus);
+        console.log("errorThrown:" + errorThrown);
+        console.log('failed to load gaze data');			
+      }
+    });
+  }
+}    
+
 
 var cp_visible = false;
 
 // display color picker
 function showColorpicker(elem){
+
 	if(cp_visible){
 		$(elem).fadeOut(500);
 	}	
@@ -255,108 +292,131 @@ function visualizationChanged(){
 // visualize attentionmap
 function drawAttentionmap(){
 
-  $('#attentionmapSettingsDiv').height($('#backgroundlayer').height());
+  //$('#attentionmapSettingsDiv').height($('#backgroundlayer').height());
 
 	// remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
 		$('#resultlayer').remove();
 	}
-
-	$('#imageDiv').append('<div id=\'attentionmapArea\' />');
-	$('#attentionmapArea').width($('#backgroundlayer').width()).height($('#backgroundlayer').height());
-	$('#attentionmapArea').css("border", "3px solid #000000");
-		
-	// color does not really matter, just chose anyone
-	var color = "rgb(0, 0, 0)";	
-	
-	var radius = $('#attentionmapRadius').val();
-	var countdefault;
-	if($('#attentionCountSelect').find('option:selected').val() == "default")
-		countdefault = true;
-	else	
-		countdefault = false;
-		
-	var config = {
-		"element": document.getElementById("attentionmapArea"),
-		"radius":  radius,
-		"opacity": 90,
-		"gradient": { 0.45: color, 0.55: color, 0.65: color, 0.95: color, 1.0: color}
-	};
-	
-	// use heatmap to create the fixations, subtract it from the cover layer
-	// heatmap creation
-	var attentionmap = h337.create(config);
-	
-  var scaleX = 1;
-  var scaleY = 1;
   
-  if(fitted){
-    // scale gaze data coordinates
-    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
-	}
-  
-	// pass data to heatmap
-	for(var i = 0; i < unsorted_content.gazedata.length; i++){
-		
-		var x  = g_content.gazedata[i].fx;
-		var y  = g_content.gazedata[i].fy;	
-		var count;
-		if(!countdefault){
-			count = Math.round(g_content.gazedata[i].gd / 100);
-		}
-		else if(countdefault){
-			count = 1;
-		}
-		
-		// add point to heatmap
-		attentionmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
-	}
-	
-	// give attentionmap canvas an id
-	$('#attentionmapArea').children('canvas').eq(0).attr('id', 'attentionmaplayer');
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  var attentionmap = new Array(idx);
+  //var coverlayer = new Array(idx);
+  var attentionmaplayer = new Array(idx);
+  var subtractionlayer = new Array(idx);
 
-	// cover layer
-	$('#imageDiv').append('<canvas id="coverlayer" width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var coverlayer = document.getElementById("coverlayer");
-	var coverctx = coverlayer.getContext("2d");
-	coverctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	coverctx.fillStyle= $('#attColor').css("background-color");
-	coverctx.fillRect(0, 0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  for(var i = 1; i <= idx; i++){
+    if($('input[id=user' + i + ']').attr('checked')){
+    
+      $('#imageDiv').append('<div id="attentionmapArea' + i + '" />');
+      $('#attentionmapArea'+i).width($('#backgroundlayer').width()).height($('#backgroundlayer').height());
+      $('#attentionmapArea'+i).css("border", "3px solid #000000");
+        
+      // color does not really matter, just chose anyone
+      var color = "rgb(0, 0, 0)";	
+      
+      var radius = $('#attentionmapRadius').val();
+      var countdefault;
+      if($('#attentionCountSelect').find('option:selected').val() == "default")
+        countdefault = true;
+      else	
+        countdefault = false;
+        
+      var config = {
+        "element": document.getElementById("attentionmapArea" + i),
+        "radius":  radius,
+        "opacity": 90,
+        "gradient": { 0.45: color, 0.55: color, 0.65: color, 0.95: color, 1.0: color}
+      };
+      
+      // use heatmap to create the fixations, subtract it from the cover layer
+      // heatmap creation
+      attentionmap[i] = h337.create(config);
+      
+      var scaleX = 1;
+      var scaleY = 1;
+      
+      if(fitted){
+        // scale gaze data coordinates
+        scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+        scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+      }
+      
+      // pass data to heatmap
+      for(var j = 0; j < unsorted_content.gazedata.length; j++){
+        
+        var x  = g_content.gazedata[j].fx;
+        var y  = g_content.gazedata[j].fy;	
+        var count;
+        if(!countdefault){
+          count = Math.round(g_content.gazedata[j].gd / 100);
+        }
+        else if(countdefault){
+          count = 1;
+        }
+        
+        // add point to heatmap
+        attentionmap[i].store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
+      }
+      
+      // give attentionmap canvas an id
+      $('#attentionmapArea'+i).children('canvas').eq(0).attr('id', 'attentionmaplayer'+i);
+      
+      attentionmaplayer[i] = document.getElementById("attentionmaplayer"+i);
+    }
+  }
+  
+  
+  // cover layer
+  $('#imageDiv').append('<canvas id="coverlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var coverlayer = document.getElementById("coverlayer");
+  var coverctx = coverlayer.getContext("2d");
+  coverctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  coverctx.fillStyle= $('#attColor').css("background-color");
+  coverctx.fillRect(0, 0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+      
+  // subtracting canvas - subtract heatmap from cover layer
+  $('#imageDiv').append('<canvas id="subtractionlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var subtractionlayer = document.getElementById("subtractionlayer");
+  var subtractionctx = subtractionlayer.getContext("2d");
+  subtractionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  subtractionctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
+  
+  subtractionctx.drawImage(coverlayer, 0, 0);
+  
+  for(var i=1; i <= idx; i++){
+    if($('input[id=user' + i + ']').attr('checked')){
+      subtractionctx.globalCompositeOperation = 'destination-out';
+      subtractionctx.drawImage(attentionmaplayer[i], 0, 0);
+    }
+  }  
+    
+  // merged canvas
+  $('#imageDiv').append('<canvas id="resultlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var resultlayer = document.getElementById("resultlayer");
+  var resultctx = resultlayer.getContext("2d");
+  resultctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  
+  var backgroundlayer = document.getElementById("backgroundlayer");
 	
-	var backgroundlayer = document.getElementById("backgroundlayer");
-	var attentionmaplayer = document.getElementById("attentionmaplayer");
-	
-	// subtracting canvas - subtract heatmap from cover layer
-	$('#imageDiv').append('<canvas id=\'subtractionlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var subtractionlayer = document.getElementById("subtractionlayer");
-	var subtractionctx = subtractionlayer.getContext("2d");
-	subtractionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	subtractionctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
-	subtractionctx.drawImage(coverlayer, 0, 0);
-	subtractionctx.globalCompositeOperation = 'destination-out';
-	subtractionctx.drawImage(attentionmaplayer, 0, 0);
-	
-	// merged canvas
-	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var resultlayer = document.getElementById("resultlayer");
-	var resultctx = resultlayer.getContext("2d");
-	resultctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	
-	// compose layers
+  // compose layers
 	resultctx.drawImage(backgroundlayer,0,0);
-	resultctx.drawImage(subtractionlayer, 0, 0);
-	
-	$('#resultlayer').css({position: 'absolute'});
-	$('#attentionmapArea').remove();
-	$('#coverlayer').remove();
-	$('#subtractionlayer').remove();
+  resultctx.drawImage(subtractionlayer, 0, 0);
+  
+  for(var i=1; i <= idx; i++){
+
+    $('#attentionmapArea'+i).remove();
+    $('#coverlayer').remove();
+    $('#subtractionlayer').remove();
+  }  
+  
+  $('#resultlayer').css({position: 'absolute'});
 }
 
 // visualize heatmap
 function drawHeatmap(){
 
-  $('#heatmapSettingsDiv').height($('#backgroundlayer').height());
+  //$('#heatmapSettingsDiv').height($('#backgroundlayer').height());
 	
   // remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
@@ -445,7 +505,7 @@ function drawHeatmap(){
 // visualize gaze plot
 function drawGazeplot(){
       
-  $('#gazeplotSettingsDiv').height($('#backgroundlayer').height());
+  //$('#gazeplotSettingsDiv').height($('#backgroundlayer').height());
 
 	// remove heatmap layer if present
 	if($('#heatmapArea').length > 0){
@@ -457,77 +517,90 @@ function drawGazeplot(){
 		$('#resultlayer').remove();
 	}
 	
-	// draw gaze plot components to seperate canvas layers
-	// connecting lines
-	$('#imageDiv').append('<canvas id=\'connectionlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var connectionlayer = document.getElementById("connectionlayer");
-	var connectionctx = connectionlayer.getContext("2d");
-	// get color from color picker
-	connectionctx.strokeStyle= $('#lineColor').css("background-color");
-	connectionctx.lineWidth = 4;
-	connectionctx.globalAlpha = $('#opacityRange').val() / 100.0;
-	connectionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	
-	// fixation circles
-	$('#imageDiv').append('<canvas id=\'fixationlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var fixationlayer = document.getElementById("fixationlayer");
-	var fixationctx = fixationlayer.getContext("2d");
-	// get color from color picker
-	fixationctx.fillStyle= $('#fixationColor').css("background-color");
-	fixationctx.lineWidth = 2;
-	fixationctx.strokeStyle="black";
-	fixationctx.globalAlpha = $('#opacityRange').val() / 100.0;
-	fixationctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	
-	// enumeration
-	$('#imageDiv').append('<canvas id=\'enumlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var enumlayer = document.getElementById("enumlayer");
-	var enumctx = enumlayer.getContext("2d");
-	enumctx.fillStyle = "black";
-	enumctx.font = "bold 16px Arial";
-	enumctx.textBaseline = "middle"; 
-	enumctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
-	
-  var scaleX = 1;
-  var scaleY = 1;
+  //var probandId = $('#probandSelection').find('option:selected').val().split('_').pop();
+  //console.log("id: " + probandId);
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  var connectionlayer = new Array(idx);
+  var fixationlayer = new Array(idx);
+  var enumlayer = new Array(idx);
   
-  if(fitted){
-    // scale gaze data coordinates
-    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
-    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
-	}
+  for(i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
   
-	// sort gaze data based on duration from long to short
-	g_content.gazedata.sort(function(a,b){
-		return (b.gd > a.gd) ? 1 : ((b.gd < a.gd) ? -1 : 0);
-	});
+      // draw gaze plot components to seperate canvas layers
+      // connecting lines
+      $('#imageDiv').append('<canvas id="connectionlayer' + parseInt(i+1) + '" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
+      connectionlayer[i+1] = document.getElementById("connectionlayer" + parseInt(i+1));
+      var connectionctx = connectionlayer[i+1].getContext("2d");      
+      
+      // get color from color picker
+      connectionctx.strokeStyle= $('#lineColor').css("background-color");
+      connectionctx.lineWidth = 4;
+      connectionctx.globalAlpha = $('#opacityRange').val() / 100.0;
+      connectionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+      
+      // fixation circles
+      $('#imageDiv').append('<canvas id="fixationlayer' + parseInt(i+1) + '" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
+      fixationlayer[i+1] = document.getElementById("fixationlayer" + parseInt(i+1));
+      var fixationctx = fixationlayer[i+1].getContext("2d");
+      // get color from color picker
+      fixationctx.fillStyle= $('#fixationColor').css("background-color");
+      fixationctx.lineWidth = 2;
+      fixationctx.strokeStyle="black";
+      fixationctx.globalAlpha = $('#opacityRange').val() / 100.0;
+      fixationctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+      
+      // enumeration
+      $('#imageDiv').append('<canvas id="enumlayer' + parseInt(i+1) + '" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
+      enumlayer[i+1] = document.getElementById("enumlayer" + parseInt(i+1));
+      var enumctx = enumlayer[i+1].getContext("2d");
+      enumctx.fillStyle = "black";
+      enumctx.font = "bold 16px Arial";
+      enumctx.textBaseline = "middle"; 
+      enumctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+      
+      var scaleX = 1;
+      var scaleY = 1;
+      
+      if(fitted){
+        // scale gaze data coordinates
+        scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+        scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+      }
+      
+      // sort gaze data based on duration from long to short
+      ctnt[i].gazedata.sort(function(a,b){
+        return (b.gd > a.gd) ? 1 : ((b.gd < a.gd) ? -1 : 0);
+      });
 
-	
-	for(var i = 0; i < g_content.gazedata.length; i++){
-		var index = g_content.gazedata[i].fi;
-		var x = g_content.gazedata[i].fx;
-		var y = g_content.gazedata[i].fy;
-		var duration = g_content.gazedata[i].gd;
-		
-		// draw connecting lines
-		if(i < unsorted_content.gazedata.length-1){
-			line(connectionctx, unsorted_content.gazedata[i].fx*scaleX, unsorted_content.gazedata[i].fy*scaleY, unsorted_content.gazedata[i+1].fx*scaleX, unsorted_content.gazedata[i+1].fy*scaleY);
-		}
-		
-		// draw fixation circles
-		var radius = $('#radiusRange').val();
-		if($('#radiusSelect').find('option:selected').val() == "duration"){
-			radius = radius / 1000 * duration;
-		}
-		circle(fixationctx, x*scaleX, y*scaleY, radius);
-		
-		// print fixation index in the middle of the fixation circle
-		var txtwidth = enumctx.measureText(index).width;
-		enumctx.fillText(index, x*scaleX-(txtwidth/2), y*scaleY);
-	}	
+      
+      for(var j = 0; j < ctnt[i].gazedata.length; j++){
+        var index = ctnt[i].gazedata[j].fi;
+        var x = ctnt[i].gazedata[j].fx;
+        var y = ctnt[i].gazedata[j].fy;
+        var duration = ctnt[i].gazedata[j].gd;
+        
+        // draw connecting lines
+        if(j < unsorted_ctnt[i].gazedata.length-1){
+          line(connectionctx, unsorted_ctnt[i].gazedata[j].fx*scaleX, unsorted_ctnt[i].gazedata[j].fy*scaleY, unsorted_ctnt[i].gazedata[j+1].fx*scaleX, unsorted_ctnt[i].gazedata[j+1].fy*scaleY);
+        }
+        
+        // draw fixation circles
+        var radius = $('#radiusRange').val();
+        if($('#radiusSelect').find('option:selected').val() == "duration"){
+          radius = radius / 1000 * duration;
+        }
+        circle(fixationctx, x*scaleX, y*scaleY, radius);
+        
+        // print fixation index in the middle of the fixation circle
+        var txtwidth = enumctx.measureText(index).width;
+        enumctx.fillText(index, x*scaleX-(txtwidth/2), y*scaleY);
+      }	
+    }
+  }  
 	
 	// merged canvas
-	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	$('#imageDiv').append('<canvas id="resultlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
 	var resultlayer = document.getElementById("resultlayer");
 	var resultctx = resultlayer.getContext("2d");
 	resultctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
@@ -535,17 +608,22 @@ function drawGazeplot(){
 	var backgroundlayer = document.getElementById("backgroundlayer");
 	
 	resultctx.drawImage(backgroundlayer,0,0);
-	if($('#showPath').attr('checked'))
-		resultctx.drawImage(connectionlayer,0,0);
-	resultctx.drawImage(fixationlayer,0,0);
-	if($('#showEnum').attr('checked'))
-		resultctx.drawImage(enumlayer,0,0);	
-	
-	$('#resultlayer').css({position: 'absolute'});
-	$('#fixationlayer').remove();
-	$('#connectionlayer').remove();
-	$('#enumlayer').remove();
-
+  
+  for(var k = 0; k < idx; k++){
+    if($('input[id=user' + parseInt(k+1) + ']').attr('checked')){
+      if($('#showPath').attr('checked'))
+        resultctx.drawImage(connectionlayer[k+1],0,0);  
+      resultctx.drawImage(fixationlayer[k+1],0,0);
+      if($('#showEnum').attr('checked'))
+        resultctx.drawImage(enumlayer[k+1],0,0);	
+    
+      $('#fixationlayer'+parseInt(k+1)).remove();
+      $('#connectionlayer'+parseInt(k+1)).remove();
+      $('#enumlayer'+parseInt(k+1)).remove();
+    }
+  }  
+  
+  $('#resultlayer').css({position: 'absolute'});
 }
 
 // draw line from (sx,sy) to (ex, ey)
@@ -577,6 +655,32 @@ function fitImageToScreen(){
   drawCanvas(g_imgSrc);
 }
 
+// add checkbox for every available gaze data
+function manageProbands(count){
+  var div = $('#multipleUserDiv');
+  div.empty();
+
+  //$('#settingsDiv').append('<select name="probandSelection" id="probandSelection" onchange="">');
+  div.append('<strong>Blickdaten:</strong><br>');
+
+  
+  if(count < 1){
+    alert('No gaze data available!');
+  }
+  else{
+    for(var i=0; i < count; i++){
+      var id = "user" + (parseInt(i)+1);
+      div.append('<input type="checkbox" id="' + id + '" onchange="visualizationChanged()"> Proband ' + parseInt(i+1) + '<br>');
+      
+      //$('#probandSelection').append($('<option></option>').val('proband_' + parseInt(i+1)).html('Proband ' + parseInt(i+1)));
+    } 
+  }
+  
+  $('input[id=user1]').attr('checked', true);
+  
+  div.show();
+}
+
 function drawCanvas(src){
 	
 	var w = $('#fileSelection').find('option:selected').attr('imgwidth');
@@ -598,7 +702,7 @@ function drawCanvas(src){
 		$('#backgroundlayer').remove();
 	}
 	// create canvas with correct dimensions
-	$('#imageDiv').append('<canvas id=\'backgroundlayer\' width=\'' + imgW + '\' height=\'' + imgH + '\' style="border:3px solid #000000; z-index:1"></canvas>');
+	$('#imageDiv').append('<canvas id="backgroundlayer" width="' + imgW + '" height="' + imgH + '" style="border:3px solid #000000; z-index:1"></canvas>');
 	var backgroundlayer = document.getElementById("backgroundlayer");
 	var ctx1 = backgroundlayer.getContext("2d");
 	ctx1.clearRect(0,0, imgW, imgH);
@@ -617,12 +721,18 @@ function drawCanvas(src){
 		// draw gazeplot on startup
 		if(value == "gazeplot"){
 		
-			// register color picker for fixation circles
-			registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
-			// register color picker for connecting lines
-			registerColorpicker($('#lineColorpicker'), $('#lineColor'));
-		
-			drawGazeplot();
+      var idx = $('#fileSelection').find('option:selected').attr('count');
+      for(i = 0; i < idx; i++){
+        if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+         
+          // register color picker for fixation circles
+          registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
+          // register color picker for connecting lines
+          registerColorpicker($('#lineColorpicker'), $('#lineColor'));
+        
+        }
+      }   
+      drawGazeplot();
 		}
     
 		if(value == "heatmap"){

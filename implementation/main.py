@@ -33,33 +33,50 @@ def listFiles():
 
   csvfiles = []
   imagefiles = []
+  list = []
   
   # get current path
   currentpath = os.path.dirname(os.path.abspath(__file__))
+
   for file in os.listdir(currentpath + "/data"):
     if file.endswith(".csv"):
       csvfiles.append(file)
+      pre = (file.partition(".")[0]).partition("_")[0]
+      if not pre in list:
+        list.append(pre)
     if file.endswith(".jpg") or file.endswith(".png"):
       imagefiles.append(file)
-      
+
+  # init buckets for daze data files
+  arr = [0] * len(list)
+  
+  # get number of gaze data files per image
+  for file in os.listdir(currentpath + "/data"):
+    if file.endswith(".csv"):
+      if (file.partition(".")[0]).partition("_")[0] in list:
+        i = list.index((file.partition(".")[0]).partition("_")[0])
+        arr[i]+=1
+    
   content = "{\"selectiondata\":["
 
   # find pairs    
   for csvfile in csvfiles:
     for imagefile in imagefiles:
-      if (csvfile.partition(".")[0] == imagefile.partition(".")[0]):
+      if ((csvfile.partition(".")[0]).partition("_")[0] == imagefile.partition(".")[0]):
         f = csvfile.partition(".")[0]
         
         # on startup create html files for all possible files to prepare request from server
         prepareImage("data/"+imagefile);
         prepareGazeData("data/"+f, extractCSVData("data/"+csvfile));
         
-        # get image dimensions
-        img = Image.open("data/"+imagefile)
-        width, height = img.size
+        if f in list:
+          img = Image.open("data/"+imagefile)
+          width, height = img.size
+            
+          idx = list.index((csvfile.partition(".")[0]).partition("_")[0])
 
-        content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"width\":" + str(width) + ", \"height\":" + str(height) + "},"
-
+          content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"width\":" + str(width) + ", \"height\":" + str(height) + ", \"count\":" + str(arr[idx]) + "},"
+          
   content = content[:-1]      
   content += "]}"
   selectionfile = open('selectiondata.json', 'w')

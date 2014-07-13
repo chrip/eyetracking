@@ -36,7 +36,7 @@
   </div>
 </div>
 
-<div id="gazeplotSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
+<div id="gazeplotSettingsDiv" style="width:200px; height: 400px; background:#cccccc; float:left; display:none;">
 	<strong>Einstellungen:</strong>
 	<p><input type="checkbox" name="showEnum" id="showEnum" value="showEnum" onchange="drawGazeplot()" checked="checked"> Zeige Reihenfolge</p>
 	<p><input type="checkbox" name="showPath" id="showPath" value="showPath" onchange="drawGazeplot()" checked="checked"> Zeige Blickpfad</p>
@@ -60,7 +60,7 @@
 	<p></p>
 </div>
 
-<div id="heatmapSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
+<div id="heatmapSettingsDiv" style="width:200px; height: 400px; background:#cccccc; float:left; display:none;">
 	<strong>Einstellungen:</strong>
 	<br>Count:
 	<select name="countSelect" id="countSelect" onchange="drawHeatmap()">
@@ -79,7 +79,7 @@
 	<div id="c3Colorpicker"></div>
 </div>
 
-<div id="attentionmapSettingsDiv" style="width:200px; background:#cccccc; float:left; display:none;">
+<div id="attentionmapSettingsDiv" style="width:200px; height: 400px; background:#cccccc; float:left; display:none;">
 	<strong>Einstellungen:</strong>
 	<br>Count:
 	<select name="attentionCountSelect" id="attentionCountSelect" onchange="drawAttentionmap()">
@@ -96,5 +96,8 @@
 </div>
 
 <div id="imageDiv" style="position:relative; margin-left:200px"></div>
+
+<div id="multipleUserDiv" style="position:relative; width:200px; min-height:100px; background:#cccccc; margin-top:400px; display:none;"></div>
+
 </body>
 </html>
