@@ -17,7 +17,6 @@
   // default: uncheck fit-to-screen checkbox 
   $('input[name=fitToScreen]').attr('checked', false);
 });
-
 // register color picker
 // elem1: inner div element
 // elem2: constantly visible element
@@ -51,7 +50,7 @@ function receiveSelection(){
 	
 	$.ajax({
 		type: 'GET',
-		url: 'selectiondata.json',
+		url: 'temp/selectiondata.json',
 		datatype: 'application/json',
 		success: function(content){
 			
@@ -106,40 +105,17 @@ function scaleDimensions(width, height){
 		
 // receive image and gaze data, execute drawCanvas() when ajax is completed
 function receiveCanvasContent(value){
-
-	// pass image source to canvas
-	var imgSrc = "";
-	// pass gaze data to draw function
-	var gazeContent;
-	
+  var filepath = value + '.' + $('#fileSelection').find('option:selected').attr('type');
+  g_imgSrc = filepath;
+  
+  receiveGD(value);
+  manageProbands($('#fileSelection').find('option:selected').attr('count'));
+  drawCanvas(filepath);
+  
+/* 
 	$.when(
 		// receive image
-    $.ajax({
-			type: 'GET',
-			url: 'data/' + value + '_imagedata.html',
-			datatype: 'application/json',
-			success: function(img){
-				
-				var filetype = $('#fileSelection').find('option:selected').attr('type');	
-				var file = "data:image/" + filetype + ";base64," + JSON.parse(img);
-
-				g_imgSrc = file;
-				imgSrc = file;
-				
-			},	
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("jq: " + JSON.stringify(jqXHR));
-				console.log("textStatus: " + textStatus);
-				console.log("errorThrown:" + errorThrown);
-				console.log('failed to load image data');			
-			},
-			complete: function(jqXHR, textStatus){
-
-				var w = $('#fileSelection').find('option:selected').attr('imgwidth');
-				var h = $('#fileSelection').find('option:selected').attr('imgheight');
-
-			}
-		})//
+    $("#imageDiv").append('<img id="dummyImage" src="data/' + filepath + '">');
     
 		// receive gaze data
 		// $.ajax({
@@ -167,8 +143,9 @@ function receiveCanvasContent(value){
 	.done(function(x){
     receiveGD(value);
     manageProbands($('#fileSelection').find('option:selected').attr('count'));
-		drawCanvas(imgSrc);
+		drawCanvas(filepath);
 	});	
+ */ 
 }		
 
 var ctnt = [];
@@ -186,7 +163,7 @@ function receiveGD(value){
     
     $.ajax({
       type: 'GET',
-      url: 'data/' + s + '_gazedata.json',
+      url: 'temp/' + s + '_gazedata.json',
       datatype: 'application/json',
       // make async call to save data in the right array slot
       async: false,
@@ -701,6 +678,7 @@ function drawCanvas(src){
 	if($('#backgroundlayer').length > 0){
 		$('#backgroundlayer').remove();
 	}
+  
 	// create canvas with correct dimensions
 	$('#imageDiv').append('<canvas id="backgroundlayer" width="' + imgW + '" height="' + imgH + '" style="border:3px solid #000000; z-index:1"></canvas>');
 	var backgroundlayer = document.getElementById("backgroundlayer");
@@ -713,54 +691,55 @@ function drawCanvas(src){
 	// draw input image as background to canvas
 	imageObj = new Image();
 	imageObj.onload = function(){
-  ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
-		
-		// specific draw functions
-		var value = $('#visSelect').val();
-		
-		// draw gazeplot on startup
-		if(value == "gazeplot"){
-		
+    ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
+      
+    // specific draw functions
+    var value = $('#visSelect').val();
+      
+    // draw gazeplot on startup
+    if(value == "gazeplot"){
+      
       var idx = $('#fileSelection').find('option:selected').attr('count');
       for(i = 0; i < idx; i++){
         if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
-         
+           
           // register color picker for fixation circles
           registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
           // register color picker for connecting lines
           registerColorpicker($('#lineColorpicker'), $('#lineColor'));
-        
+          
         }
       }   
+      
       drawGazeplot();
-		}
-    
-		if(value == "heatmap"){
-		
-			// register color picker
-			registerColorpicker($('#c1Colorpicker'), $('#c1Color'));
-			registerColorpicker($('#c2Colorpicker'), $('#c2Color'));
-			registerColorpicker($('#c3Colorpicker'), $('#c3Color'));
-			
-			// place color pickers
-			$('#c1Colorpicker').css('margin-top', '30px').css('margin-left', '10px');
-			$('#c2Colorpicker').css('margin-top', '30px').css('margin-left', '73px');
-			$('#c3Colorpicker').css('margin-top', '30px').css('margin-left', '136px');
-			
-			drawHeatmap();
-		}	
-		
-		if(value == "attentionmap"){
+    }
+      
+    if(value == "heatmap"){
+      
+      // register color picker
+      registerColorpicker($('#c1Colorpicker'), $('#c1Color'));
+      registerColorpicker($('#c2Colorpicker'), $('#c2Color'));
+      registerColorpicker($('#c3Colorpicker'), $('#c3Color'));
+        
+      // place color pickers
+      $('#c1Colorpicker').css('margin-top', '30px').css('margin-left', '10px');
+      $('#c2Colorpicker').css('margin-top', '30px').css('margin-left', '73px');
+      $('#c3Colorpicker').css('margin-top', '30px').css('margin-left', '136px');
+        
+      drawHeatmap();
+    }	
+      
+    if(value == "attentionmap"){
 
-			// register color picker
-			registerColorpicker($('#attColorpicker'), $('#attColor'));
-			
-			// place color picker
-			$('#attColorpicker').css('margin-top', '30px').css('margin-left', '10px');
-		
-			drawAttentionmap();
-		}
-	}
-	imageObj.src = src;
-	
+      // register color picker
+      registerColorpicker($('#attColorpicker'), $('#attColor'));
+        
+      // place color picker
+      $('#attColorpicker').css('margin-top', '30px').css('margin-left', '10px');
+      
+      drawAttentionmap();
+    }
+  }
+  
+	imageObj.src = 'data/' + src;
 }

@@ -7,14 +7,18 @@ from PIL import Image
 
 
 def prepareGazeData(filename, data):
+  
+  #create temp ordner
+  if not os.path.exists("temp"):
+    os.makedirs("temp")
 
   #check whether the gazedata is already encoded, if yes do nothing
-  if not os.path.isfile(filename+"_gazedata.json"):
-    datafile = open(filename+'_gazedata.json', 'w')
+  if not os.path.isfile("temp/"+filename+"_gazedata.json"):
+    datafile = open("temp/"+filename+'_gazedata.json', 'w')
     datafile.write(data)
     datafile.close()
 
-
+# not necessary anymore since images are loaded directly via browser
 def prepareImage(filename):
   
   #check whether the image is already encoded, if yes do nothing
@@ -66,8 +70,8 @@ def listFiles():
         f = csvfile.partition(".")[0]
         
         # on startup create html files for all possible files to prepare request from server
-        prepareImage("data/"+imagefile);
-        prepareGazeData("data/"+f, extractCSVData("data/"+csvfile));
+        #prepareImage("data/"+imagefile);
+        prepareGazeData(f, extractCSVData("data/"+csvfile));
         
         if f in list:
           img = Image.open("data/"+imagefile)
@@ -79,7 +83,7 @@ def listFiles():
           
   content = content[:-1]      
   content += "]}"
-  selectionfile = open('selectiondata.json', 'w')
+  selectionfile = open('temp/selectiondata.json', 'w')
   selectionfile.write(content)
   selectionfile.close()
   

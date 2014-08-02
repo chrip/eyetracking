@@ -100,7 +100,7 @@ class AjaxHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
       if sendStaticFileReply == True:
 		
         #Open the static file requested and send it
-        f = open(curdir + sep + self.path) 
+        f = open(curdir + sep + self.path, 'rb') 
         self.send_response(200)
         self.send_header('Content-type',mimetype)
         self.end_headers()
