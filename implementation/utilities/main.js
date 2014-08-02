@@ -17,11 +17,15 @@
   // default: uncheck fit-to-screen checkbox 
   $('input[name=fitToScreen]').attr('checked', false);
 });
+
+var color = [ 'red', 'green', 'blue', 'yellow', 'purple', 'orange', 'lightblue', 'white', 'pink', 'lime' ];
+
+
 // register color picker
 // elem1: inner div element
 // elem2: constantly visible element
-function registerColorpicker(elem1, elem2){
-
+function registerColorpicker(elem1, elem2, clr){
+  
 	elem1.ColorPicker({
 		flat:true, 
 		color: '#00ff00',
@@ -521,7 +525,7 @@ function drawGazeplot(){
       fixationlayer[i+1] = document.getElementById("fixationlayer" + parseInt(i+1));
       var fixationctx = fixationlayer[i+1].getContext("2d");
       // get color from color picker
-      fixationctx.fillStyle= $('#fixationColor').css("background-color");
+      fixationctx.fillStyle= $('#fixationColor'+parseInt(i+1)).css("background-color");
       fixationctx.lineWidth = 2;
       fixationctx.strokeStyle="black";
       fixationctx.globalAlpha = $('#opacityRange').val() / 100.0;
@@ -645,11 +649,28 @@ function manageProbands(count){
     alert('No gaze data available!');
   }
   else{
+  
+    var visualization = $('#visSelect').val();
+          
     for(var i=0; i < count; i++){
       var id = "user" + (parseInt(i)+1);
-      div.append('<input type="checkbox" id="' + id + '" onchange="visualizationChanged()"> Proband ' + parseInt(i+1) + '<br>');
+      div.append('<input style="float:left; overflow:hidden;" type="checkbox" id="' + id + '" onchange="visualizationChanged()"> Proband ' + parseInt(i+1));
       
-      //$('#probandSelection').append($('<option></option>').val('proband_' + parseInt(i+1)).html('Proband ' + parseInt(i+1)));
+      // append fixation color pickers
+      if(visualization == "gazeplot"){
+        
+        var fp = 'fixColorpicker'+parseInt(i+1);
+        var fc = 'fixationColor'+parseInt(i+1);
+          
+        div.append('<div id="' + fc + '" style="background:' + color[i] + '; width:25px; height:25px; float:right; margin-right: 20px; z-index:5; border:2px solid #000000;" onclick="showColorpicker(' + fp + ')">');
+        div.append('<div id="' + fp + '"/><br><br>');
+      }	
+      else if(visualization == "heatmap"){
+
+      }
+      else if(visualization == "attentionmap"){
+
+      }
     } 
   }
   
@@ -701,14 +722,14 @@ function drawCanvas(src){
       
       var idx = $('#fileSelection').find('option:selected').attr('count');
       for(i = 0; i < idx; i++){
-        if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
-           
-          // register color picker for fixation circles
-          registerColorpicker($('#fixColorpicker'), $('#fixationColor'));
-          // register color picker for connecting lines
-          registerColorpicker($('#lineColorpicker'), $('#lineColor'));
-          
-        }
+      
+        var fp = '#fixColorpicker'+parseInt(i+1);
+        var fc = '#fixationColor'+parseInt(i+1);
+        
+        // register color picker for fixation circles
+        registerColorpicker($(fp), $(fc), color[i]);
+        // register color picker for connecting lines
+        registerColorpicker($('#lineColorpicker'), $('#lineColor'));       
       }   
       
       drawGazeplot();

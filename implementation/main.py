@@ -5,7 +5,6 @@ import base64
 import os
 from PIL import Image
 
-
 def prepareGazeData(filename, data):
   
   #create temp ordner
