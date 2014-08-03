@@ -13,6 +13,11 @@
 	var g_content;
 	var unsorted_content;
 	var g_imgSrc;
+  
+  // first initilization of probands
+  var firstcall = true;
+  // previous visualization to monitor changed visualization option
+  var oldvisualization;
 
   // default: uncheck fit-to-screen checkbox 
   $('input[name=fitToScreen]').attr('checked', false);
@@ -113,7 +118,7 @@ function receiveCanvasContent(value){
   g_imgSrc = filepath;
   
   receiveGD(value);
-  manageProbands($('#fileSelection').find('option:selected').attr('count'));
+  //manageProbands($('#fileSelection').find('option:selected').attr('count'));
   drawCanvas(filepath);
   
 /* 
@@ -245,7 +250,11 @@ function fileChanged(){
 			$('#heatmapSettingsDiv').hide();
 		}
 	}
-}	
+  
+  firstcall = true;
+  
+  manageProbands($('#fileSelection').find('option:selected').attr('count'));
+}
 
 function visualizationChanged(){
 	
@@ -266,7 +275,15 @@ function visualizationChanged(){
 		$('#gazeplotSettingsDiv').hide();
 		$('#heatmapSettingsDiv').hide();
 	}
-	
+  
+  if(firstcall || visualization != oldvisualization){
+    manageProbands($('#fileSelection').find('option:selected').attr('count'));
+    
+    firstcall = false;
+  }
+  
+  oldvisualization = visualization;
+  
 	drawCanvas(g_imgSrc);
 }
 
@@ -279,12 +296,111 @@ function drawAttentionmap(){
 	if($('#resultlayer').length > 0){
 		$('#resultlayer').remove();
 	}
+   
+  $('#imageDiv').append('<div id="attentionmapArea" />');
+  $('#attentionmapArea').width($('#backgroundlayer').width()).height($('#backgroundlayer').height());
+  $('#attentionmapArea').css("border", "3px solid #000000"); 
+  
+  // color does not really matter, just chose anyone
+  var color = "rgb(0, 0, 0)";	
+      
+  var radius = $('#attentionmapRadius').val();
+  var countdefault;
+  if($('#attentionCountSelect').find('option:selected').val() == "default")
+    countdefault = true;
+  else	
+    countdefault = false;
+        
+  var config = {
+    "element": document.getElementById("attentionmapArea"),
+    "radius":  radius,
+    "opacity": 90,
+    "gradient": { 0.45: color, 0.55: color, 0.65: color, 0.95: color, 1.0: color}
+  };
+      
+  // use heatmap to create the fixations, subtract it from the cover layer
+  // heatmap creation
+  var attentionmap = h337.create(config);
+      
+  var scaleX = 1;
+  var scaleY = 1;
+      
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = $('#backgroundlayer').width()  / $('#fileSelection').find('option:selected').attr('imgwidth');
+    scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
+  }
   
   var idx = $('#fileSelection').find('option:selected').attr('count');
-  var attentionmap = new Array(idx);
+  
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+    
+      for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
+      
+        var x = unsorted_ctnt[i].gazedata[j].fx;
+        var y = unsorted_ctnt[i].gazedata[j].fy;	
+        var count;
+        if(!countdefault){
+          count = Math.round(unsorted_ctnt[i].gazedata[j].gd / 100);
+        }
+        else if(countdefault){
+          count = 1;
+        }
+        
+        // add point to heatmap
+        attentionmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
+      }
+    }  
+  }
+
+  // give attentionmap canvas an id
+  $('#attentionmapArea').children('canvas').eq(0).attr('id', 'attentionmaplayer');
+  
+  var backgroundlayer = document.getElementById("backgroundlayer");
+	var attentionmaplayer = document.getElementById("attentionmaplayer");
+  
+  // cover layer
+  $('#imageDiv').append('<canvas id="coverlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var coverlayer = document.getElementById("coverlayer");
+  var coverctx = coverlayer.getContext("2d");
+  coverctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  coverctx.fillStyle= $('#attColor').css("background-color");
+  coverctx.fillRect(0, 0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  
+  // subtracting canvas - subtract heatmap from cover layer
+  $('#imageDiv').append('<canvas id="subtractionlayer" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var subtractionlayer = document.getElementById("subtractionlayer");
+  var subtractionctx = subtractionlayer.getContext("2d");
+  subtractionctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  subtractionctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
+  subtractionctx.drawImage(coverlayer, 0, 0);
+	subtractionctx.globalCompositeOperation = 'destination-out';
+	subtractionctx.drawImage(attentionmaplayer, 0, 0);
+  
+  // merged canvas
+	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + $('#backgroundlayer').width() + '\' height=\'' + $('#backgroundlayer').height() + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var resultlayer = document.getElementById("resultlayer");
+	var resultctx = resultlayer.getContext("2d");
+	resultctx.clearRect(0,0, $('#backgroundlayer').width(), $('#backgroundlayer').height());
+  
+  // compose layers
+	resultctx.drawImage(backgroundlayer,0,0);
+  resultctx.drawImage(subtractionlayer, 0, 0);
+   
+  $('#resultlayer').css({position: 'absolute'});
+	$('#attentionmapArea').remove();
+	$('#coverlayer').remove();
+	$('#subtractionlayer').remove(); 
+   
+/*   
+   
+   
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  //var attentionmap = new Array(idx);
   //var coverlayer = new Array(idx);
-  var attentionmaplayer = new Array(idx);
-  var subtractionlayer = new Array(idx);
+  //var attentionmaplayer = new Array(idx);
+  //var subtractionlayer = new Array(idx);
 
   for(var i = 1; i <= idx; i++){
     if($('input[id=user' + i + ']').attr('checked')){
@@ -392,6 +508,8 @@ function drawAttentionmap(){
   }  
   
   $('#resultlayer').css({position: 'absolute'});
+  
+*/  
 }
 
 // visualize heatmap
@@ -447,22 +565,29 @@ function drawHeatmap(){
     scaleY = $('#backgroundlayer').height() / $('#fileSelection').find('option:selected').attr('imgheight');
 	}
   
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  
 	// pass data to heatmap
-	for(var i = 0; i < unsorted_content.gazedata.length; i++){
-		
-		var x  = unsorted_content.gazedata[i].fx;
-		var y  = unsorted_content.gazedata[i].fy;	
-		var count;
-		if(!countdefault){
-			count = Math.round(unsorted_content.gazedata[i].gd / 100);
-		}
-		else if(countdefault){
-			count = 1;
-		}
-    
-		// add point to heatmap
-		heatmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
-	}
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+      
+      for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
+      
+        var x = unsorted_ctnt[i].gazedata[j].fx;
+        var y = unsorted_ctnt[i].gazedata[j].fy;	
+        var count;
+        if(!countdefault){
+          count = Math.round(unsorted_ctnt[i].gazedata[j].gd / 100);
+        }
+        else if(countdefault){
+          count = 1;
+        }
+        
+        // add point to heatmap
+        heatmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
+      }
+    }
+  }  
 	
 	// give heat map canvas an id
 	$('#heatmapArea').children('canvas').eq(0).attr('id', 'heatmaplayer');
@@ -485,7 +610,7 @@ function drawHeatmap(){
 
 // visualize gaze plot
 function drawGazeplot(){
-      
+  
   //$('#gazeplotSettingsDiv').height($('#backgroundlayer').height());
 
 	// remove heatmap layer if present
@@ -654,10 +779,12 @@ function manageProbands(count){
           
     for(var i=0; i < count; i++){
       var id = "user" + (parseInt(i)+1);
-      div.append('<input style="float:left; overflow:hidden;" type="checkbox" id="' + id + '" onchange="visualizationChanged()"> Proband ' + parseInt(i+1));
+      div.append('<input type="checkbox" id="' + id + '" onchange="visualizationChanged()"> Proband ' + parseInt(i+1));
       
       // append fixation color pickers
       if(visualization == "gazeplot"){
+      
+        $('#'+id).css('float', 'left').css('overflow', 'hidden');
         
         var fp = 'fixColorpicker'+parseInt(i+1);
         var fc = 'fixationColor'+parseInt(i+1);
@@ -665,11 +792,8 @@ function manageProbands(count){
         div.append('<div id="' + fc + '" style="background:' + color[i] + '; width:25px; height:25px; float:right; margin-right: 20px; z-index:5; border:2px solid #000000;" onclick="showColorpicker(' + fp + ')">');
         div.append('<div id="' + fp + '"/><br><br>');
       }	
-      else if(visualization == "heatmap"){
-
-      }
-      else if(visualization == "attentionmap"){
-
+      else if(visualization == "heatmap" || visualization == "attentionmap"){
+        div.append('<br>');
       }
     } 
   }
