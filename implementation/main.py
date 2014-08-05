@@ -1,10 +1,10 @@
 import csv
 import json
 import ajaxHandler
-import base64
 import os
 from PIL import Image
 
+# write required gazedata to .json file
 def prepareGazeData(filename, data):
   
   #create temp ordner
@@ -17,49 +17,38 @@ def prepareGazeData(filename, data):
     datafile.write(data)
     datafile.close()
 
-# not necessary anymore since images are loaded directly via browser
-def prepareImage(filename):
-  
-  #check whether the image is already encoded, if yes do nothing
-  if not os.path.isfile(filename.partition(".")[0]+"_imagedata.html"):
-      with open(filename, 'rb') as image_file:
-        encoded_string = json.dumps(base64.b64encode(image_file.read()))
-        
-        # write image code into .html-file (no .json file possible due to ajaxHandler)
-        imagefile = open(filename.partition(".")[0]+'_imagedata.html', 'w')
-        imagefile.write(encoded_string)
-        imagefile.close()
 
-
-# search for relevant files in directory
+# search for relevant files in "data" directory
 def listFiles():
 
-  csvfiles = []
-  imagefiles = []
-  list = []
+  csvfiles = []     # .csv files 
+  imagefiles = []   # .jpg or .png files
+  list = []         # contains files which are available as gazedata and image
   
   # get current path
   currentpath = os.path.dirname(os.path.abspath(__file__))
 
+  # iterate over data directory, gather .csv and image files
   for file in os.listdir(currentpath + "/data"):
     if file.endswith(".csv"):
       csvfiles.append(file)
-      pre = (file.partition(".")[0]).partition("_")[0]
-      if not pre in list:
-        list.append(pre)
+      prefix = (file.partition(".")[0]).partition("_")[0]
+      if not prefix in list:
+        list.append(prefix)
     if file.endswith(".jpg") or file.endswith(".png"):
       imagefiles.append(file)
 
-  # init buckets for daze data files
+  # init buckets for gazedata files
   arr = [0] * len(list)
   
   # get number of gaze data files per image
-  for file in os.listdir(currentpath + "/data"):
-    if file.endswith(".csv"):
-      if (file.partition(".")[0]).partition("_")[0] in list:
-        i = list.index((file.partition(".")[0]).partition("_")[0])
-        arr[i]+=1
-    
+  for file in csvfiles:
+    prefix = (file.partition(".")[0]).partition("_")[0]
+    if prefix in list:
+      i = list.index(prefix)
+      arr[i]+=1
+        
+  # create .json file containing all possibly displayable filecombinations     
   content = "{\"selectiondata\":["
 
   # find pairs    
@@ -68,16 +57,17 @@ def listFiles():
       if ((csvfile.partition(".")[0]).partition("_")[0] == imagefile.partition(".")[0]):
         f = csvfile.partition(".")[0]
         
-        # on startup create html files for all possible files to prepare request from server
-        #prepareImage("data/"+imagefile);
+        # create gaze data files for matching pairs
         prepareGazeData(f, extractCSVData("data/"+csvfile));
         
         if f in list:
+          # get image resulution
           img = Image.open("data/"+imagefile)
           width, height = img.size
             
-          idx = list.index((csvfile.partition(".")[0]).partition("_")[0])
+          idx = list.index(f.partition("_")[0])
 
+          # append filename, image resolution and number of matching gazedata files of the images
           content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"width\":" + str(width) + ", \"height\":" + str(height) + ", \"count\":" + str(arr[idx]) + "},"
           
   content = content[:-1]      
@@ -88,9 +78,10 @@ def listFiles():
   
   #print content
 
-
+# get relevant content from .csv files
 def extractCSVData(filename):
 
+  # create csv file reader
   csvFile = open(filename, 'rb')
   reader = csv.reader(csvFile)
   
@@ -158,17 +149,5 @@ def extractCSVData(filename):
 # get possible files
 listFiles()  
 
-#read filename
-#x = raw_input("Dateiname: ")
-
-# save serialized data
-#data = extractCSVData(str("data/"+x))
-#prepareGazeData(data)
-
-# prepare image for ajax request from browser
-#prepareImage(str("data/"+x))
-
-# debugging output
-#print data
-
+# start ajax server
 ajaxHandler.start_server()
