@@ -2,7 +2,6 @@ import csv
 import json
 import ajaxHandler
 import os
-from PIL import Image
 
 # write required gazedata to .json file
 def prepareGazeData(filename, data):
@@ -61,14 +60,11 @@ def listFiles():
         prepareGazeData(f, extractCSVData("data/"+csvfile));
         
         if f in list:
-          # get image resulution
-          img = Image.open("data/"+imagefile)
-          width, height = img.size
             
           idx = list.index(f.partition("_")[0])
 
           # append filename, image resolution and number of matching gazedata files of the images
-          content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"width\":" + str(width) + ", \"height\":" + str(height) + ", \"count\":" + str(arr[idx]) + "},"
+          content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"count\":" + str(arr[idx]) + "},"
           
   content = content[:-1]      
   content += "]}"

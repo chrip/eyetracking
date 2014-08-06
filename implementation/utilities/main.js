@@ -2,8 +2,6 @@
 var color = [ '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '##ff8000', '#ff00ff', '#ffffff', '#ff0080', '#80ff00' ];
 // save image source globally
 var g_imgSrc;
-// first initilization of probands
-var firstcall = true;
 // previous visualization to monitor changed visualization option
 var oldvisualization;
 // save content of gazedatafile, keep unsorted copy
@@ -111,7 +109,7 @@ function receiveSelection(){
 			// add options to dropdown menu
 			for(var i = 0; i < content.selectiondata.length; i++){
 				n = content.selectiondata[i].name;
-				$('#fileSelection').append($('<option></option>').val(n).html(n).attr("type", content.selectiondata[i].type).attr("imgWidth", content.selectiondata[i].width).attr("imgHeight", content.selectiondata[i].height).attr("count", content.selectiondata[i].count));
+				$('#fileSelection').append($('<option></option>').val(n).html(n).attr("type", content.selectiondata[i].type).attr("count", content.selectiondata[i].count));
 			}	
 			
 		},
@@ -230,26 +228,22 @@ function fileChanged(){
     manageSettings($('#visSelect').val());
 	}
   
-  firstcall = true;
-  
   // display choose dialog for available probands
   manageProbands($('#fileSelection').find('option:selected').attr('count'));
 }
 
 // execute when visualization method is changed
 function visualizationChanged(){
-	
+  
   // get visualization style
 	var visualization = $('#visSelect').val();
 	
   // manage settings
 	manageSettings(visualization);
-  
+    
   // on first or when visualization changes execute proband management 
-  if(firstcall || visualization != oldvisualization){
+  if((visualization != oldvisualization && typeof oldvisualization !== 'undefined')){
     manageProbands($('#fileSelection').find('option:selected').attr('count'));
-
-    firstcall = false;
   }
   
   oldvisualization = visualization;
@@ -533,7 +527,7 @@ function drawGazeplot(){
       fixationctx.clearRect(0,0, bglWidth, bglHeight);
       
       // enumeration of fixations
-      $('#imageDiv').append('<canvas id="enumlayer' + parseInt(i+1) + '" width="' + $('#backgroundlayer').width() + '" height="' + $('#backgroundlayer').height() + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
+      $('#imageDiv').append('<canvas id="enumlayer' + parseInt(i+1) + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
       enumlayer[i] = document.getElementById("enumlayer" + parseInt(i+1));
       var enumctx = enumlayer[i].getContext("2d");
       enumctx.fillStyle = "black";
