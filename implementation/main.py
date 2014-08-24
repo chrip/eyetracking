@@ -87,13 +87,14 @@ def extractCSVData(filename):
   rownum = 0
   line = ""
   lastline = ""
+  first = True
   for row in reader:
     # save header row
     if rownum == 0:
       header = row
     else:
       colnum = 0
-      
+
       completeList += "{"  
 
       for col in row:
@@ -106,21 +107,24 @@ def extractCSVData(filename):
         
         # fixation x coordinate
         if header[colnum] == "FixationPointX (MCSpx)":
-          #completeList += "\"fx\":" + col + ","
           line += "\"fx\":" + col + ","
         # fixation y coordinate  
         elif header[colnum] == "FixationPointY (MCSpx)":
-          #completeList += "\"fy\":" + col + "},"
           line += "\"fy\":" + col + "},"
         # gaze duration  
         elif header[colnum] == "GazeEventDuration":
-          #completeList += "\"gd\":" + col + ","
           line += "\"gd\":" + col + ","
         # fixation index
         elif header[colnum] == "FixationIndex":
-          #completeList += "\"fi\":" + col + ","
           line += "\"fi\":" + col + ","
-                    
+        # fixation time
+        elif header[colnum] == "RecordingTimestamp":
+          if first:
+            starttime = int(col)
+          time = int(col) - starttime + 1 
+          line += "\"ft\":" + str(time) + ","
+          first = False
+                  
         colnum += 1
 
       # force valid json
