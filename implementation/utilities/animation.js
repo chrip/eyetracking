@@ -1,4 +1,4 @@
-﻿  // animation parameter
+﻿// animation parameter
 var startTime = 0;
 var pauseTime = 0;
 var continueTime = 0;
@@ -84,16 +84,10 @@ function slideAnimation(){
   
   if(value == "gazeplot")
     drawGazeplotAnimation(time);
-  if(value == "heatmap"){
-    // TODO
-    console.log("animate heatmap");
-    runAnimation = false;
-  }
-  if(value == "attentionmap"){
-    // TODO
-    console.log("animate attentionmap");
-    runAnimation = false;
-  }
+  if(value == "heatmap")
+    drawHeatmapAnimation(time);
+  if(value == "attentionmap")
+    drawAttentionmapAnimation(time);
 }
 
 // do animation
@@ -136,20 +130,14 @@ function animate(){
     // move slider automatically
     $('#animationRange').val(timeDiff);
     
+    // call animation
     var value = $('#visSelect').val();
-    
     if(value == "gazeplot")
       drawGazeplotAnimation(timeDiff);
-    if(value == "heatmap"){
-      // TODO
-      console.log("animate heatmap");
-      runAnimation = false;
-    }
-    if(value == "attentionmap"){
-      // TODO
-      console.log("animate attentionmap");
-      runAnimation = false;
-    }
+    if(value == "heatmap")
+      drawHeatmapAnimation(timeDiff);
+    if(value == "attentionmap")
+      drawAttentionmapAnimation(timeDiff);
   }
 }  
 
@@ -223,8 +211,8 @@ function drawGazeplotAnimation(time){
         scaleY = bglHeight / imageObj.height;
       }
 
-      // iterate over sorted gazedata
-      for(var j = 0; j < ctnt[i].gazedata.length; j++){
+      // iterate over unsorted gazedata
+      for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
         
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
@@ -296,4 +284,255 @@ function drawGazeplotAnimation(time){
     pauseTime = 0;
     slidertime = 0;
   }
+}
+
+// visualize heatmap
+function drawHeatmapAnimation(time){
+	
+  // remove gaze plot layer if present
+	if($('#resultlayer').length > 0){
+		$('#resultlayer').remove();
+	}
+
+  var bglWidth  = $('#backgroundlayer').width();
+  var bglHeight = $('#backgroundlayer').height();   
+
+  // append heatmap
+	$('#imageDiv').append('<div id=\'heatmapArea\' />');
+	$('#heatmapArea').width(bglWidth).height(bglHeight);
+	$('#heatmapArea').css("border", "3px solid #000000");
+	
+	// heatmap settings
+	var radius = $('#heatmapRadius').val();
+	var opacity = $('#heatmapOpacity').val();
+	var countdefault;
+	if($('#countSelect').find('option:selected').val() == "default")
+		countdefault = true;
+	else	
+		countdefault = false;
+    
+  // compute color gradient  
+  // 3 main colors selectable by user
+	var c1 = $('#c1Color').css("background-color");
+	var c2 = $('#c2Color').css("background-color");
+	var c3 = $('#c3Color').css("background-color");
+	
+	var c1rgb = c1.match(/\d+/g);
+	var c2rgb = c2.match(/\d+/g);
+	var c3rgb = c3.match(/\d+/g);
+	
+  // compute shades
+	var c15 = "rgb(" + Math.min(c1rgb[0]+c2rgb[0], 255) + ", " + Math.min(c1rgb[1]+c2rgb[1], 255) + ", " + Math.min(c1rgb[2]+c2rgb[2], 255) + ")";
+	var c25 = "rgb(" + Math.min(c2rgb[0]+c3rgb[0], 255) + ", " + Math.min(c2rgb[1]+c3rgb[1], 255) + ", " + Math.min(c2rgb[2]+c3rgb[2], 255) + ")";
+		
+  // configure heatmap  
+	var config = {
+		element: document.getElementById("heatmapArea"),
+		radius:  radius,
+		opacity: opacity,
+		gradient: { 0.45: c1, 0.55: c15, 0.65: c2, 0.95: c25, 1.0: c3}
+	};
+	
+	// heatmap creation
+	var heatmap = h337.create(config);
+	
+  var scaleX = 1;
+  var scaleY = 1;
+  
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = bglWidth  / imageObj.width;
+    scaleY = bglHeight / imageObj.height;
+	}
+  
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  
+	// iterate over available probands, if selected by user add its gazedata to heatmap (accumulated heatmap)
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+      
+      // iterate over fixations of gazedatafile
+      for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
+      
+        // get fixation timestamp
+        var timestamp = unsorted_ctnt[i].gazedata[j].ft;
+        if(timestamp < time){
+        
+          // get coordinates
+          var x = unsorted_ctnt[i].gazedata[j].fx;
+          var y = unsorted_ctnt[i].gazedata[j].fy;	
+          // compute value
+          var count;
+          if(!countdefault){
+            count = Math.round(unsorted_ctnt[i].gazedata[j].gd / 100);
+          }
+          else if(countdefault){
+            count = 1;
+          }
+          
+          // add fixationpoint to heatmap
+          heatmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
+        }  
+      }
+    }
+  }  
+	
+	// give heat map canvas an id
+	$('#heatmapArea').children('canvas').eq(0).attr('id', 'heatmaplayer');
+	
+	// merged canvas
+	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + bglWidth + '\' height=\'' + bglHeight + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var resultlayer = document.getElementById("resultlayer");
+	var resultctx = resultlayer.getContext("2d");
+	resultctx.clearRect(0,0, bglWidth, bglHeight);
+
+	var backgroundlayer = document.getElementById("backgroundlayer");
+	var heatmaplayer = document.getElementById("heatmaplayer");
+	
+  // merge background and heatmap
+	resultctx.drawImage(backgroundlayer,0,0);
+	resultctx.drawImage(heatmaplayer, 0, 0);
+	
+	$('#resultlayer').css({position: 'absolute'});
+	$('#heatmapArea').remove();
+  
+  // stop animation at the end
+  var max = $('#animationRange').prop("max");
+  if(max <= time){
+    runAnimation = false;
+    start = true; 
+    continueTime = 0;
+    pauseTime = 0;
+    slidertime = 0;
+  }
+}
+
+// visualize attentionmap
+function drawAttentionmapAnimation(time){
+
+	// remove gaze plot layer if present
+	if($('#resultlayer').length > 0){
+		$('#resultlayer').remove();
+	}
+   
+  var bglWidth  = $('#backgroundlayer').width();
+  var bglHeight = $('#backgroundlayer').height(); 
+   
+  // append attentionmap 
+  $('#imageDiv').append('<div id="attentionmapArea" />');
+  $('#attentionmapArea').width(bglWidth).height(bglHeight);
+  $('#attentionmapArea').css("border", "3px solid #000000"); 
+  
+  // color does not really matter, just chose anyone
+  var color = "rgb(0, 0, 0)";	
+      
+  // get settings    
+  var radius = $('#attentionmapRadius').val();
+  var countdefault;
+  if($('#attentionCountSelect').find('option:selected').val() == "default")
+    countdefault = true;
+  else	
+    countdefault = false;
+        
+  // use heatmap to create the fixations, subtract it from a cover layer      
+  // configure heatmap      
+  var config = {
+    "element": document.getElementById("attentionmapArea"),
+    "radius":  radius,
+    "opacity": 90,
+    "gradient": { 0.45: color, 0.55: color, 0.65: color, 0.95: color, 1.0: color}
+  };
+      
+  // heatmap creation
+  var attentionmap = h337.create(config);
+      
+  var scaleX = 1;
+  var scaleY = 1;
+      
+  if(fitted){
+    // scale gaze data coordinates
+    scaleX = bglWidth  / imageObj.width;
+    scaleY = bglHeight / imageObj.height;
+  }
+  
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  
+  // iterate over available probands, if selected by user add its gazedata to heatmap (accumulated attentionmap)
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+    
+      // iterate over fixations of gazedatafile
+      for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
+      
+        // get fixation timestamp
+        var timestamp = unsorted_ctnt[i].gazedata[j].ft;
+        if(timestamp < time){
+       
+         // get coordinates
+          var x = unsorted_ctnt[i].gazedata[j].fx;
+          var y = unsorted_ctnt[i].gazedata[j].fy;	
+          // compute value
+          var count;
+          if(!countdefault){
+            count = Math.round(unsorted_ctnt[i].gazedata[j].gd / 100);
+          }
+          else if(countdefault){
+            count = 1;
+          }
+          
+          // add fixationpoint to heatmap
+          attentionmap.store.addDataPoint(Math.round(x*scaleX), Math.round(y*scaleY), count);
+        }  
+      }
+    }  
+  }
+
+  // give attentionmap canvas an id
+  $('#attentionmapArea').children('canvas').eq(0).attr('id', 'attentionmaplayer');
+  
+  var backgroundlayer = document.getElementById("backgroundlayer");
+	var attentionmaplayer = document.getElementById("attentionmaplayer");
+  
+  // cover layer
+  $('#imageDiv').append('<canvas id="coverlayer" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var coverlayer = document.getElementById("coverlayer");
+  var coverctx = coverlayer.getContext("2d");
+  coverctx.clearRect(0,0, bglWidth, bglHeight);
+  coverctx.fillStyle= $('#attColor').css("background-color");
+  coverctx.fillRect(0, 0, bglWidth, bglHeight);
+  
+  // subtracting canvas: subtract heatmap from cover layer
+  $('#imageDiv').append('<canvas id="subtractionlayer" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var subtractionlayer = document.getElementById("subtractionlayer");
+  var subtractionctx = subtractionlayer.getContext("2d");
+  subtractionctx.clearRect(0,0, bglWidth, bglHeight);
+  subtractionctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
+  subtractionctx.drawImage(coverlayer, 0, 0);
+	subtractionctx.globalCompositeOperation = 'destination-out';
+	subtractionctx.drawImage(attentionmaplayer, 0, 0);
+  
+  // merged canvas
+	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + bglWidth + '\' height=\'' + bglHeight + '\' style="border:3px solid #000000; z-index:2"></canvas>');
+	var resultlayer = document.getElementById("resultlayer");
+	var resultctx = resultlayer.getContext("2d");
+	resultctx.clearRect(0,0, bglWidth, bglHeight);
+  
+  // compose layers
+	resultctx.drawImage(backgroundlayer,0,0);
+  resultctx.drawImage(subtractionlayer, 0, 0);
+   
+  $('#resultlayer').css({position: 'absolute'});
+	$('#attentionmapArea').remove();
+	$('#coverlayer').remove();
+	$('#subtractionlayer').remove(); 
+ 
+  // stop animation at the end
+  var max = $('#animationRange').prop("max");
+  if(max <= time){
+    runAnimation = false;
+    start = true; 
+    continueTime = 0;
+    pauseTime = 0;
+    slidertime = 0;
+  } 
 }
