@@ -58,17 +58,16 @@ def listFiles():
         
         # create gaze data files for matching pairs
         prepareGazeData(f, extractCSVData("data/"+csvfile));
-        
-        if f in list:
-            
-          idx = list.index(f.partition("_")[0])
-
-          # append filename, image resolution and number of matching gazedata files of the images
-          content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefile.partition(".")[2] + "\", \"count\":" + str(arr[idx]) + "},"
           
+  for f in list:
+          
+    idx = list.index(f)
+    content += "{\"name\":\"" + f + "\", \"type\":\"" + imagefiles[idx].partition(".")[2] + "\", \"count\":" + str(arr[idx]) + "},"
+            
   content = content[:-1]      
   content += "]}"
-  selectionfile = open('temp/selectiondata.json', 'w')
+  
+  selectionfile = open("temp/selectiondata.json", 'w')
   selectionfile.write(content)
   selectionfile.close()
   
@@ -86,8 +85,16 @@ def extractCSVData(filename):
   
   rownum = 0
   line = ""
-  lastline = ""
+
   first = True
+  # set flag if GazeEventType is unclassified
+  eventFlag = False
+  # use only first occurrence of index
+  index = 0
+  lastIndex = 0
+  # set flag if fixation coordinates are not available
+  fixFlag = False
+  
   for row in reader:
     # save header row
     if rownum == 0:
@@ -96,15 +103,26 @@ def extractCSVData(filename):
       colnum = 0
 
       completeList += "{"  
+      
+      
 
       for col in row:
         # select relevant data and save it to separate list
         
         # skip line if not suitable to viewed file
-        if header[colnum] == 'MediaName' and col == '':
+        if (header[colnum] == 'MediaName' and col == ''):
+          completeList = completeList[:-1]          
+          break
+
+        if (header[colnum] == 'GazeEventType' and col == 'Unclassified'):
+          eventFlag = True
           completeList = completeList[:-1]
           break
-        
+          
+        if (header[colnum] == "FixationPointX (MCSpx)" and col == '') or (header[colnum] == "FixationPointY (MCSpx)" and col == ''):
+          fixFlag = True
+          break
+          
         # fixation x coordinate
         if header[colnum] == "FixationPointX (MCSpx)":
           line += "\"fx\":" + col + ","
@@ -117,6 +135,7 @@ def extractCSVData(filename):
         # fixation index
         elif header[colnum] == "FixationIndex":
           line += "\"fi\":" + col + ","
+          index = col
         # fixation time
         elif header[colnum] == "RecordingTimestamp":
           if first:
@@ -124,15 +143,21 @@ def extractCSVData(filename):
           time = int(col) - starttime + 1 
           line += "\"ft\":" + str(time) + ","
           first = False
-                  
+
         colnum += 1
 
-      # force valid json
-      if not line == lastline:  
-        completeList += line
-      elif completeList[len(completeList)-1] == "{":
+      if eventFlag:
+        line = ""
+        eventFlag = False
+      if index == lastIndex:
+        line = "" 
+      if fixFlag:
+        line = ""
+        fixFlag = False
+      completeList += line
+      if completeList[len(completeList)-1] == "{":
         completeList = completeList[:-1]
-      lastline = line
+      lastIndex = index  
       line = ""
       
     rownum += 1    
