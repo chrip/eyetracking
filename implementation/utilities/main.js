@@ -75,7 +75,7 @@ function scaleDimensions(width, height){
 	// scale image
 	var ratio = 1.0;
 	var maxWidth = windowwidth - borderwidth - 30;
-	var maxHeight = windowheight - headerheight - 30;
+	var maxHeight = windowheight - headerheight - 70;
 
 	if (width > maxWidth){
 		ratio = maxWidth / width;
@@ -674,8 +674,6 @@ function manageProbands(count){
   $('input[id=user1]').attr('checked', true);
   
   div.show();
-  
-  prepareAnimation();
 }
 
 // fit image to screen dimensions
@@ -721,6 +719,9 @@ function drawCanvas(src){
   
     // draw image to canvas
     ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
+    
+    // configure animation
+    prepareAnimation();
       
     // call specific draw functions
     var value = $('#visSelect').val();

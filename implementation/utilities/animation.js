@@ -7,6 +7,12 @@ var timeDiff = 0;
 var slidervalue = 0;
 var start = true;
 var slid = false;
+// GIF encoder
+var encoder;
+var shots = [];
+var grabLimit = 10;
+var grabRate = 500;
+var count = 0;
 
 // animation is running
 var runAnimation = false;
@@ -15,6 +21,8 @@ var pauseAnimation = false;
 
 // create canvas, buttons, slider, init animation
 function prepareAnimation(){
+
+  $('#animationDiv').empty();
 
   // get image dimensions
   var imgW = imageObj.width;
@@ -28,11 +36,12 @@ function prepareAnimation(){
     imgH = Math.floor(arr[1]);
   }
   
-  $('#multipleUserDiv').append('<strong>Animation:</strong><br>');
+  $('#animationDiv').append('<strong>Animation:\t</strong>');
   
   // create animation buttons
-  $('#multipleUserDiv').append('<input type="button" id="playButton" value="Play" onclick="play()">');
-  $('#multipleUserDiv').append('<input type="button" id="playButton" value="Pause" onclick="pause()">');
+  $('#animationDiv').append('<input type="button" id="playButton" value="Play" onclick="play()">');
+  $('#animationDiv').append('<input type="button" id="playButton" value="Pause" onclick="pause()">');
+  $('#animationDiv').show();
   
   // create animation slider
   var lastElem = 0;
@@ -41,7 +50,13 @@ function prepareAnimation(){
     if(elem > lastElem)
       lastElem = elem + 1;
   }
-  $('#multipleUserDiv').append('<input type="range" id="animationRange" min="0" max="' + lastElem + '" value="0" oninput="slideAnimation()" onchange="slideAnimation()" />');
+  
+  var rangewidth = $('#backgroundlayer').width() * 0.66;
+  $('#animationDiv').append('<input type="range" id="animationRange" min="0" max="' + lastElem + '" value="0" style="width:' + rangewidth + 'px" oninput="slideAnimation()" onchange="slideAnimation()" />');
+  $('#animationDiv').width($('#backgroundlayer').width()+7);
+ 
+  // show time
+  $('#animationDiv').append('<strong id="time"></strong>');
   
   // set animation
   window.requestAnimFrame = (function(callback) {    
@@ -51,6 +66,18 @@ function prepareAnimation(){
       };
   })();
 }
+
+// prepare saving of animation
+function prepareGIF(){
+
+  encoder = new GIFEncoder();
+  // loop forever
+  encoder.setRepeat(0);
+  encoder.setDelay(500);
+  console.log(encoder.start());
+}
+
+
 
 // play button
 function play(){
@@ -80,6 +107,10 @@ function slideAnimation(){
   slid = true;
   slidervalue = time;
   
+  // display time
+  $('#time').empty();
+  $('#time').append(parseFloat(time/1000));
+  
   var value = $('#visSelect').val();
   
   if(value == "gazeplot")
@@ -96,6 +127,7 @@ function animate(){
   if(runAnimation){
    
     if(start){
+      prepareGIF();
       startTime = (new Date()).getTime();
       start = false;
     }
@@ -115,6 +147,10 @@ function animate(){
     } 
     
     timeDiff+= slidertime;
+    
+    // display time
+    $('#time').empty();
+    $('#time').append(parseFloat($('#animationRange').val()/1000));
     
     requestAnimFrame(
       function(){
@@ -275,6 +311,9 @@ function drawGazeplotAnimation(time){
   
   $('#resultlayer').css({position: 'absolute'});  
   
+  encoder.addFrame(resultctx);
+  console.log("draw frame");
+  
   // stop animation at the end
   var max = $('#animationRange').prop("max");
   if(max <= time){
@@ -283,6 +322,15 @@ function drawGazeplotAnimation(time){
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
+    
+    // stop GIF creation
+    console.log(encoder.finish());
+    var binary_gif = encoder.stream().getData();
+    data_url = 'data:image/gif;base64,'+encode64(binary_gif);
+    console.log(data_url);
+
+    
+    //$('#animationDiv').append(data_url);
   }
 }
 
