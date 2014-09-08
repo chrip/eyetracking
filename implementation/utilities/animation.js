@@ -14,22 +14,15 @@ var runAnimation = false;
 // animation is paused
 var pauseAnimation = false;
 
+// keep horizontal slider position
+$(window).scroll(function(){
+  $('#animationDiv').css('left',-$(window).scrollLeft()+208);
+});
+
 // create canvas, buttons, slider, init animation
 function prepareAnimation(){
 
   $('#animationDiv').empty();
-
-  // get image dimensions
-  var imgW = imageObj.width;
-  var imgH = imageObj.height;
-  
-  // if fit to screen is selected
-  if(fitted){
-    // get scaled canvas size
-    var arr = scaleDimensions(imgW, imgH);	
-    imgW = Math.floor(arr[0]);
-    imgH = Math.floor(arr[1]);
-  }
   
   $('#animationDiv').append('<strong>Animation:\t</strong>');
   
@@ -40,22 +33,22 @@ function prepareAnimation(){
   
   // create animation slider
   var lastElem = 0;
-  for(i = 0; i < 2/*$('#fileSelection').find('option:selected').attr('count')*/; i++){
+  for(i = 0; i < $('#fileSelection').find('option:selected').attr('count'); i++){
     var elem = unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].ft;
     if(elem > lastElem)
       lastElem = elem + 1;
   }
   
-  var rangewidth = $('#backgroundlayer').width() * 0.66;
+  var rangewidth = $('#backgroundlayer').width() * 0.6;
  
   $('#animationDiv').append('<div id="slider-range"/>');
   
   addSlider($('#slider-range'), 0, lastElem, 0, lastElem);
   
-  $('#animationDiv').width($('#backgroundlayer').width()+5);
+  $('#animationDiv').width($('#backgroundlayer').width()+6);
  
   // show time
-  $('#animationDiv').append('<strong id="time"></strong>');
+  $('#animationDiv').append('<strong id="time">Zeit: </strong>');
   
   // set animation
   window.requestAnimFrame = (function(callback) {    
@@ -115,7 +108,7 @@ function slideAnimation(){
   
   // display time
   $('#time').empty();
-  $('#time').append(parseFloat(time/1000));
+  $('#time').append("Zeit : " + parseFloat(time/1000));
   
   var value = $('#visSelect').val();
   
@@ -155,7 +148,7 @@ function animate(){
     
     // display time
     $('#time').empty();
-    $('#time').append(parseFloat($('#slider-range').slider("values", 0)/1000));
+    $('#time').append("Zeit: " + parseFloat($('#slider-range').slider("values", 0)/1000));
     
     requestAnimFrame(
       function(){
@@ -182,6 +175,22 @@ function animate(){
   }
 }  
 
+// stop animation
+function stopAnimation(time){
+  var max = $('#slider-range').slider("option", "max");
+  var slidermax = $('#slider-range').slider("values", 1);
+  max = Math.min(max, slidermax);
+  if(max <= time){
+    runAnimation = false;
+    start = true; 
+    continueTime = 0;
+    pauseTime = 0;
+    slidertime = 0;
+    // jump back to starting position
+    $('#slider-range').slider("values", 0, startvalue);
+  }
+}
+
 function drawGazeplotAnimation(time){
   
 	// remove heatmap layer if present
@@ -204,39 +213,38 @@ function drawGazeplotAnimation(time){
   var fixationlayer = new Array(idx);
   var enumlayer = new Array(idx);
   
+  // get radius
+  var radius = $('#radiusRange').val();
+  
   // iterate over probands if selected by user
   for(var i = 0; i < idx; i++){
     if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
   
+      var i_n = parseInt(i+1);
+    
       // init seperate canvas layers
       // connecting lines
-      $('#imageDiv').append('<canvas id="connectionlayer' + parseInt(i+1) + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
-      connectionlayer[i] = document.getElementById("connectionlayer" + parseInt(i+1));
+      $('#imageDiv').append('<canvas id="connectionlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
+      connectionlayer[i] = document.getElementById("connectionlayer" + i_n);
       var connectionctx = connectionlayer[i].getContext("2d");      
-      
       // get color for connecting lines between fixations from color picker - equal for all probands
       connectionctx.strokeStyle= $('#lineColor').css("background-color");
       connectionctx.lineWidth = 4;
-      // get opacity - global
-      connectionctx.globalAlpha = $('#opacityRange').val() / 100.0;
       connectionctx.clearRect(0,0, bglWidth, bglHeight);
       
       // fixation circles
-      $('#imageDiv').append('<canvas id="fixationlayer' + parseInt(i+1) + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
-      fixationlayer[i] = document.getElementById("fixationlayer" + parseInt(i+1));
+      $('#imageDiv').append('<canvas id="fixationlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
+      fixationlayer[i] = document.getElementById("fixationlayer" + i_n);
       var fixationctx = fixationlayer[i].getContext("2d");
-      
       // get fixationcolor from color picker - individual color for each proband
       fixationctx.fillStyle= $('#fixationColor'+parseInt(i+1)).css("background-color");
       fixationctx.lineWidth = 2;
       fixationctx.strokeStyle="black";
-      // get opacity - equal for all probands
-      fixationctx.globalAlpha = $('#opacityRange').val() / 100.0;
       fixationctx.clearRect(0,0, bglWidth, bglHeight);
       
       // enumeration of fixations
-      $('#imageDiv').append('<canvas id="enumlayer' + parseInt(i+1) + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + parseInt(2+ i+1) + '"></canvas>');
-      enumlayer[i] = document.getElementById("enumlayer" + parseInt(i+1));
+      $('#imageDiv').append('<canvas id="enumlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
+      enumlayer[i] = document.getElementById("enumlayer" + i_n);
       var enumctx = enumlayer[i].getContext("2d");
       enumctx.fillStyle = "black";
       enumctx.font = "bold 16px Arial";
@@ -273,11 +281,10 @@ function drawGazeplotAnimation(time){
           }
           
           // draw fixation circles
-          var radius = $('#radiusRange').val();
           if($('#radiusSelect').find('option:selected').val() == "duration"){
-            radius = radius / 1000 * duration;
+            var rad = radius / 1000 * duration;
           }
-          circle(fixationctx, x*scaleX, y*scaleY, radius);
+          circle(fixationctx, x*scaleX, y*scaleY, rad);
           
           // print fixation index in the middle of the fixation circle
           var txtwidth = enumctx.measureText(index).width;
@@ -292,15 +299,13 @@ function drawGazeplotAnimation(time){
 	var resultlayer = document.getElementById("resultlayer");
 	var resultctx = resultlayer.getContext("2d");
 	resultctx.clearRect(0,0, bglWidth, bglHeight);
-
-	var backgroundlayer = document.getElementById("backgroundlayer");
-	
-  // draw background image to result
-	resultctx.drawImage(backgroundlayer,0,0);
   
   // merge layers to result if selected
   for(var k = 0; k < idx; k++){
     if($('input[id=user' + parseInt(k+1) + ']').attr('checked')){
+      
+      var k_n = parseInt(k+1);
+      
       if($('#showPath').attr('checked'))
         resultctx.drawImage(connectionlayer[k],0,0);  
       resultctx.drawImage(fixationlayer[k],0,0);
@@ -308,29 +313,18 @@ function drawGazeplotAnimation(time){
         resultctx.drawImage(enumlayer[k],0,0);	
       
       // remove layers since they are not necessary anymore
-      $('#fixationlayer'+parseInt(k+1)).remove();
-      $('#connectionlayer'+parseInt(k+1)).remove();
-      $('#enumlayer'+parseInt(k+1)).remove();
+      $('#fixationlayer'+k_n).remove();
+      $('#connectionlayer'+k_n).remove();
+      $('#enumlayer'+k_n).remove();
     }
   }  
   
   $('#resultlayer').css({position: 'absolute'});  
   
   // stop animation
-  var max = $('#slider-range').slider("option", "max");
-  var slidermax = $('#slider-range').slider("values", 1);
-  max = Math.min(max, slidermax);
-  if(max <= time){
-    runAnimation = false;
-    start = true; 
-    continueTime = 0;
-    pauseTime = 0;
-    slidertime = 0;
-    // jump back to starting position
-    $('#slider-range').slider("values", 0, startvalue);
-  }
+  stopAnimation(time);
 }
-
+  
 // visualize heatmap
 function drawHeatmapAnimation(time){
 	
@@ -356,26 +350,17 @@ function drawHeatmapAnimation(time){
 	else	
 		countdefault = false;
     
-  // compute color gradient  
-  // 3 main colors selectable by user
-	var c1 = $('#c1Color').css("background-color");
-	var c2 = $('#c2Color').css("background-color");
-	var c3 = $('#c3Color').css("background-color");
-	
-	var c1rgb = c1.match(/\d+/g);
-	var c2rgb = c2.match(/\d+/g);
-	var c3rgb = c3.match(/\d+/g);
-	
-  // compute shades
-	var c15 = "rgb(" + Math.min(c1rgb[0]+c2rgb[0], 255) + ", " + Math.min(c1rgb[1]+c2rgb[1], 255) + ", " + Math.min(c1rgb[2]+c2rgb[2], 255) + ")";
-	var c25 = "rgb(" + Math.min(c2rgb[0]+c3rgb[0], 255) + ", " + Math.min(c2rgb[1]+c3rgb[1], 255) + ", " + Math.min(c2rgb[2]+c3rgb[2], 255) + ")";
+  if(colorchanged){
+    gradients = computeColors();
+    colorchanged = false;
+  }  
 		
   // configure heatmap  
 	var config = {
 		element: document.getElementById("heatmapArea"),
 		radius:  radius,
 		opacity: opacity,
-		gradient: { 0.45: c1, 0.55: c15, 0.65: c2, 0.95: c25, 1.0: c3}
+		gradient: { 0.45: gradients[0], 0.55: gradients[1], 0.65: gradients[2], 0.95: gradients[3], 1.0: gradients[4]}
 	};
 	
 	// heatmap creation
@@ -431,29 +416,15 @@ function drawHeatmapAnimation(time){
 	var resultctx = resultlayer.getContext("2d");
 	resultctx.clearRect(0,0, bglWidth, bglHeight);
 
-	var backgroundlayer = document.getElementById("backgroundlayer");
 	var heatmaplayer = document.getElementById("heatmaplayer");
 	
-  // merge background and heatmap
-	resultctx.drawImage(backgroundlayer,0,0);
 	resultctx.drawImage(heatmaplayer, 0, 0);
 	
 	$('#resultlayer').css({position: 'absolute'});
 	$('#heatmapArea').remove();
   
   // stop animation
-  var max = $('#slider-range').slider("option", "max");
-  var slidermax = $('#slider-range').slider("values", 1);
-  max = Math.min(max, slidermax);
-  if(max <= time){
-    runAnimation = false;
-    start = true; 
-    continueTime = 0;
-    pauseTime = 0;
-    slidertime = 0;
-    // jump back to starting position
-    $('#slider-range').slider("values", 0, startvalue);
-  }
+  stopAnimation(time);
 }
 
 // visualize attentionmap
@@ -488,7 +459,7 @@ function drawAttentionmapAnimation(time){
   var config = {
     "element": document.getElementById("attentionmapArea"),
     "radius":  radius,
-    "opacity": 90,
+    "opacity": 100,
     "gradient": { 0.45: color, 0.55: color, 0.65: color, 0.95: color, 1.0: color}
   };
       
@@ -539,7 +510,6 @@ function drawAttentionmapAnimation(time){
   // give attentionmap canvas an id
   $('#attentionmapArea').children('canvas').eq(0).attr('id', 'attentionmaplayer');
   
-  var backgroundlayer = document.getElementById("backgroundlayer");
 	var attentionmaplayer = document.getElementById("attentionmaplayer");
   
   // cover layer
@@ -551,41 +521,19 @@ function drawAttentionmapAnimation(time){
   coverctx.fillRect(0, 0, bglWidth, bglHeight);
   
   // subtracting canvas: subtract heatmap from cover layer
-  $('#imageDiv').append('<canvas id="subtractionlayer" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:2"></canvas>');
-  var subtractionlayer = document.getElementById("subtractionlayer");
-  var subtractionctx = subtractionlayer.getContext("2d");
-  subtractionctx.clearRect(0,0, bglWidth, bglHeight);
-  subtractionctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
-  subtractionctx.drawImage(coverlayer, 0, 0);
-	subtractionctx.globalCompositeOperation = 'destination-out';
-	subtractionctx.drawImage(attentionmaplayer, 0, 0);
-  
-  // merged canvas
-	$('#imageDiv').append('<canvas id=\'resultlayer\' width=\'' + bglWidth + '\' height=\'' + bglHeight + '\' style="border:3px solid #000000; z-index:2"></canvas>');
-	var resultlayer = document.getElementById("resultlayer");
-	var resultctx = resultlayer.getContext("2d");
-	resultctx.clearRect(0,0, bglWidth, bglHeight);
-  
-  // compose layers
-	resultctx.drawImage(backgroundlayer,0,0);
-  resultctx.drawImage(subtractionlayer, 0, 0);
+  $('#imageDiv').append('<canvas id="resultlayer" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:2"></canvas>');
+  var resultlayer = document.getElementById("resultlayer");
+  var resultctx = resultlayer.getContext("2d");
+  resultctx.clearRect(0,0, bglWidth, bglHeight);
+  resultctx.globalAlpha = $('#attentionmapOpacity').val() / 100.0;
+  resultctx.drawImage(coverlayer, 0, 0);
+	resultctx.globalCompositeOperation = 'destination-out';
+	resultctx.drawImage(attentionmaplayer, 0, 0);
    
   $('#resultlayer').css({position: 'absolute'});
 	$('#attentionmapArea').remove();
-	$('#coverlayer').remove();
-	$('#subtractionlayer').remove(); 
+	$('#coverlayer').remove(); 
  
   // stop animation
-  var max = $('#slider-range').slider("option", "max");
-  var slidermax = $('#slider-range').slider("values", 1);
-  max = Math.min(max, slidermax);
-  if(max <= time){
-    runAnimation = false;
-    start = true; 
-    continueTime = 0;
-    pauseTime = 0;
-    slidertime = 0;
-    // jump back to starting position
-    $('#slider-range').slider("values", 0, startvalue);
-  } 
+  stopAnimation(time);
 }
