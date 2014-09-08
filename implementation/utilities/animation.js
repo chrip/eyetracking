@@ -7,12 +7,7 @@ var timeDiff = 0;
 var slidervalue = 0;
 var start = true;
 var slid = false;
-// GIF encoder
-var encoder;
-var shots = [];
-var grabLimit = 10;
-var grabRate = 500;
-var count = 0;
+var startvalue = 0;
 
 // animation is running
 var runAnimation = false;
@@ -40,7 +35,7 @@ function prepareAnimation(){
   
   // create animation buttons
   $('#animationDiv').append('<input type="button" id="playButton" value="Play" onclick="play()">');
-  $('#animationDiv').append('<input type="button" id="playButton" value="Pause" onclick="pause()">');
+  $('#animationDiv').append('<input type="button" id="playButton" value="Pause" onclick="pause()"><br>');
   $('#animationDiv').show();
   
   // create animation slider
@@ -52,8 +47,12 @@ function prepareAnimation(){
   }
   
   var rangewidth = $('#backgroundlayer').width() * 0.66;
-  $('#animationDiv').append('<input type="range" id="animationRange" min="0" max="' + lastElem + '" value="0" style="width:' + rangewidth + 'px" oninput="slideAnimation()" onchange="slideAnimation()" />');
-  $('#animationDiv').width($('#backgroundlayer').width()+7);
+ 
+  $('#animationDiv').append('<div id="slider-range"/>');
+  
+  addSlider($('#slider-range'), 0, lastElem, 0, lastElem);
+  
+  $('#animationDiv').width($('#backgroundlayer').width()+5);
  
   // show time
   $('#animationDiv').append('<strong id="time"></strong>');
@@ -67,21 +66,27 @@ function prepareAnimation(){
   })();
 }
 
-// prepare saving of animation
-function prepareGIF(){
-
-  encoder = new GIFEncoder();
-  // loop forever
-  encoder.setRepeat(0);
-  encoder.setDelay(500);
-  console.log(encoder.start());
-}
-
-
+function addSlider(element, min, max, v1, v2){
+  $(function(){
+    $(element).slider({
+      range: true,
+      min: min,
+      max: max,
+      values: [v1, v2],
+      slide: function(event, ui){
+        slideAnimation();
+      }  
+    });
+  });
+}  
 
 // play button
 function play(){
   runAnimation = true;
+  startvalue = $('#slider-range').slider("values", 0);
+  if(startvalue != 0)
+    slid = true;
+    startchanged = true;
   animate();
 }
 
@@ -94,7 +99,7 @@ function pause(){
   pauseAnimation = true;
       
   // save slidervalue to start from right position
-  slidervalue = $('#animationRange').val();
+  slidervalue = $('#slider-range').slider("values", 0);
   
   slidertime = 0;
 }
@@ -102,7 +107,8 @@ function pause(){
 // silder functionality
 function slideAnimation(){
 
-  var time = $('#animationRange').val();
+  //var time = $('#animationRange').val();
+  var time = $('#slider-range').slider("values", 0);
   
   slid = true;
   slidervalue = time;
@@ -127,7 +133,6 @@ function animate(){
   if(runAnimation){
    
     if(start){
-      prepareGIF();
       startTime = (new Date()).getTime();
       start = false;
     }
@@ -144,13 +149,13 @@ function animate(){
     if(slid){
       slidertime = slidervalue - timeDiff;
       slid = false;
-    } 
+    }  
     
     timeDiff+= slidertime;
     
     // display time
     $('#time').empty();
-    $('#time').append(parseFloat($('#animationRange').val()/1000));
+    $('#time').append(parseFloat($('#slider-range').slider("values", 0)/1000));
     
     requestAnimFrame(
       function(){
@@ -164,7 +169,7 @@ function animate(){
     // console.log("timediff " + timeDiff);
     
     // move slider automatically
-    $('#animationRange').val(timeDiff);
+    $('#slider-range').slider("values", 0, timeDiff);
     
     // call animation
     var value = $('#visSelect').val();
@@ -311,26 +316,18 @@ function drawGazeplotAnimation(time){
   
   $('#resultlayer').css({position: 'absolute'});  
   
-  encoder.addFrame(resultctx);
-  console.log("draw frame");
-  
-  // stop animation at the end
-  var max = $('#animationRange').prop("max");
+  // stop animation
+  var max = $('#slider-range').slider("option", "max");
+  var slidermax = $('#slider-range').slider("values", 1);
+  max = Math.min(max, slidermax);
   if(max <= time){
     runAnimation = false;
     start = true; 
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
-    
-    // stop GIF creation
-    console.log(encoder.finish());
-    var binary_gif = encoder.stream().getData();
-    data_url = 'data:image/gif;base64,'+encode64(binary_gif);
-    console.log(data_url);
-
-    
-    //$('#animationDiv').append(data_url);
+    // jump back to starting position
+    $('#slider-range').slider("values", 0, startvalue);
   }
 }
 
@@ -444,14 +441,18 @@ function drawHeatmapAnimation(time){
 	$('#resultlayer').css({position: 'absolute'});
 	$('#heatmapArea').remove();
   
-  // stop animation at the end
-  var max = $('#animationRange').prop("max");
+  // stop animation
+  var max = $('#slider-range').slider("option", "max");
+  var slidermax = $('#slider-range').slider("values", 1);
+  max = Math.min(max, slidermax);
   if(max <= time){
     runAnimation = false;
     start = true; 
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
+    // jump back to starting position
+    $('#slider-range').slider("values", 0, startvalue);
   }
 }
 
@@ -574,13 +575,17 @@ function drawAttentionmapAnimation(time){
 	$('#coverlayer').remove();
 	$('#subtractionlayer').remove(); 
  
-  // stop animation at the end
-  var max = $('#animationRange').prop("max");
+  // stop animation
+  var max = $('#slider-range').slider("option", "max");
+  var slidermax = $('#slider-range').slider("values", 1);
+  max = Math.min(max, slidermax);
   if(max <= time){
     runAnimation = false;
     start = true; 
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
+    // jump back to starting position
+    $('#slider-range').slider("values", 0, startvalue);
   } 
 }

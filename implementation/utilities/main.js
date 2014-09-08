@@ -229,7 +229,7 @@ function fileChanged(){
 	}
   
   // display choose dialog for available probands
-  manageProbands($('#fileSelection').find('option:selected').attr('count'));
+  manageProbands($('#fileSelection').find('option:selected').attr('count'), true);
 }
 
 // execute when visualization method is changed
@@ -241,9 +241,9 @@ function visualizationChanged(){
   // manage settings
 	manageSettings(visualization);
     
-  // on first or when visualization changes execute proband management 
+  // on first execution or when visualization changes execute proband management 
   if((visualization != oldvisualization && typeof oldvisualization !== 'undefined')){
-    manageProbands($('#fileSelection').find('option:selected').attr('count'));
+    manageProbands($('#fileSelection').find('option:selected').attr('count'), false);
   }
   
   oldvisualization = visualization;
@@ -629,7 +629,20 @@ function circle(ctx, x, y, r){
 }	
 
 // add checkbox for every available gazedatafile
-function manageProbands(count){
+function manageProbands(count, first){
+
+  // get checked probands if its not the first draw of an image - in this case select only proband 1
+  if(!first){
+    //var checkedProbands = new Array(count);
+    var checkedProbands = [];
+    for(var i = 0; i < count; i++){
+      if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+        checkedProbands[i] = true;
+      }  
+      else
+        checkedProbands[i] = false;
+    }
+  }
 
   var div = $('#multipleUserDiv');
   // clear div
@@ -670,8 +683,16 @@ function manageProbands(count){
     } 
   }
   
-  // preselect proband 1
-  $('input[id=user1]').attr('checked', true);
+  // preselect probands
+  if(first)
+    $('input[id=user1]').attr('checked', true);
+  else{
+    for(var i=0; i < count; i++){
+      if(checkedProbands[i] && checkedProbands[i] != "2"){
+        $('input[id=user' + parseInt(i+1) + ']').attr('checked', true);
+      }  
+    }
+  }
   
   div.show();
 }
