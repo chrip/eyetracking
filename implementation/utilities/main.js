@@ -721,6 +721,7 @@ function manageProbands(count, first){
 function fitImageToScreen(){
   
   fitted = !(fitted);
+  $('#backgroundlayer').remove();
   
   // redraw
   drawCanvas(g_imgSrc);

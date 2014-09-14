@@ -34,7 +34,7 @@ function prepareAnimation(){
   // create animation slider
   var lastElem = 0;
   for(i = 0; i < $('#fileSelection').find('option:selected').attr('count'); i++){
-    var elem = unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].ft;
+    var elem = unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].ft + unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].gd;
     if(elem > lastElem)
       lastElem = elem + 1;
   }
@@ -59,6 +59,7 @@ function prepareAnimation(){
   })();
 }
 
+// init jquery ui slider
 function addSlider(element, min, max, v1, v2){
   $(function(){
     $(element).slider({
@@ -106,6 +107,9 @@ function slideAnimation(){
   slid = true;
   slidervalue = time;
   
+  var startT = $('#slider-range').slider("values", 0);
+  var endT   = $('#slider-range').slider("values", 1);
+  
   // display time
   $('#time').empty();
   $('#time').append("Zeit : " + parseFloat(time/1000));
@@ -113,11 +117,11 @@ function slideAnimation(){
   var value = $('#visSelect').val();
   
   if(value == "gazeplot")
-    drawGazeplotAnimation(time);
+    drawGazeplotAnimation(time, startT, endT, true);
   if(value == "heatmap")
-    drawHeatmapAnimation(time);
+    drawHeatmapAnimation(time, startT, endT, true);
   if(value == "attentionmap")
-    drawAttentionmapAnimation(time);
+    drawAttentionmapAnimation(time, startT, endT, true);
 }
 
 // do animation
@@ -148,7 +152,7 @@ function animate(){
     
     // display time
     $('#time').empty();
-    $('#time').append("Zeit: " + parseFloat($('#slider-range').slider("values", 0)/1000));
+    $('#time').append("Zeit: " + parseFloat(timeDiff/1000));
     
     requestAnimFrame(
       function(){
@@ -160,18 +164,18 @@ function animate(){
     // console.log("continuetime " + continueTime);
     // console.log("time " + (time-startTime));
     // console.log("timediff " + timeDiff);
-    
-    // move slider automatically
-    $('#slider-range').slider("values", 0, timeDiff);
+       
+    var startT = $('#slider-range').slider("values", 0);
+    var endT   = $('#slider-range').slider("values", 1);
     
     // call animation
     var value = $('#visSelect').val();
     if(value == "gazeplot")
-      drawGazeplotAnimation(timeDiff);
+      drawGazeplotAnimation(timeDiff, startT, endT, false);
     if(value == "heatmap")
-      drawHeatmapAnimation(timeDiff);
+      drawHeatmapAnimation(timeDiff, startT, endT, false);
     if(value == "attentionmap")
-      drawAttentionmapAnimation(timeDiff);
+      drawAttentionmapAnimation(timeDiff, startT, endT, false);
   }
 }  
 
@@ -186,12 +190,10 @@ function stopAnimation(time){
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
-    // jump back to starting position
-    $('#slider-range').slider("values", 0, startvalue);
   }
 }
 
-function drawGazeplotAnimation(time){
+function drawGazeplotAnimation(time, startT, endT, display){
   
 	// remove heatmap layer if present
 	if($('#heatmapArea').length > 0){
@@ -260,12 +262,26 @@ function drawGazeplotAnimation(time){
         scaleY = bglHeight / imageObj.height;
       }
 
+      // display fixations while moving sliders
+      if(display)
+        time = endT;
+        
+      // organize line drawing  
+      var t = true;  
+      var startIndex = 1;
+      var firstIndex = unsorted_ctnt[i].gazedata[0].fi;
+        
       // iterate over unsorted gazedata
       for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
         
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
-        if(timestamp < time){
+        if(timestamp <= time && startT <= timestamp){
+        
+          if(t){
+            startIndex = unsorted_ctnt[i].gazedata[j].fi;
+            t = false;
+          }            
         
           // get index
           var index = unsorted_ctnt[i].gazedata[j].fi;
@@ -274,15 +290,19 @@ function drawGazeplotAnimation(time){
           var y = unsorted_ctnt[i].gazedata[j].fy;
           // get fixationduration
           var duration = unsorted_ctnt[i].gazedata[j].gd;
-          
+  
           // draw connecting lines
-          if(j > 0){
+          if(j > startIndex-firstIndex){
             line(connectionctx, unsorted_ctnt[i].gazedata[j-1].fx*scaleX, unsorted_ctnt[i].gazedata[j-1].fy*scaleY, unsorted_ctnt[i].gazedata[j].fx*scaleX, unsorted_ctnt[i].gazedata[j].fy*scaleY);
           }
           
           // draw fixation circles
           if($('#radiusSelect').find('option:selected').val() == "duration"){
             var rad = radius / 1000 * duration;
+            var factor = (time - timestamp) / duration;
+            if(factor > 1)
+              factor = 1;
+            rad *=factor;
           }
           circle(fixationctx, x*scaleX, y*scaleY, rad);
           
@@ -326,7 +346,7 @@ function drawGazeplotAnimation(time){
 }
   
 // visualize heatmap
-function drawHeatmapAnimation(time){
+function drawHeatmapAnimation(time, startT, endT, display){
 	
   // remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
@@ -377,6 +397,10 @@ function drawHeatmapAnimation(time){
   
   var idx = $('#fileSelection').find('option:selected').attr('count');
   
+  // display fixations while moving silder
+  if(display)
+    time = endT;
+  
 	// iterate over available probands, if selected by user add its gazedata to heatmap (accumulated heatmap)
   for(var i = 0; i < idx; i++){
     if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
@@ -386,7 +410,7 @@ function drawHeatmapAnimation(time){
       
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
-        if(timestamp < time){
+        if(timestamp <= time && startT <= timestamp){
         
           // get coordinates
           var x = unsorted_ctnt[i].gazedata[j].fx;
@@ -428,7 +452,7 @@ function drawHeatmapAnimation(time){
 }
 
 // visualize attentionmap
-function drawAttentionmapAnimation(time){
+function drawAttentionmapAnimation(time, startT, endT, display){
 
 	// remove gaze plot layer if present
 	if($('#resultlayer').length > 0){
@@ -475,6 +499,10 @@ function drawAttentionmapAnimation(time){
     scaleY = bglHeight / imageObj.height;
   }
   
+  // display fixations while moving sliders
+  if(display)
+    time = endT;
+        
   var idx = $('#fileSelection').find('option:selected').attr('count');
   
   // iterate over available probands, if selected by user add its gazedata to heatmap (accumulated attentionmap)
@@ -486,7 +514,7 @@ function drawAttentionmapAnimation(time){
       
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
-        if(timestamp < time){
+        if(timestamp < time && startT <= timestamp){
        
          // get coordinates
           var x = unsorted_ctnt[i].gazedata[j].fx;
