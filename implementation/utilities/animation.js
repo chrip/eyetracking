@@ -49,6 +49,14 @@ function prepareAnimation(){
  
   // show time
   $('#animationDiv').append('<strong id="time">Zeit: </strong>');
+  // control slider opacity
+  $('#animationDiv').css({opacity: 0.6});
+  $('#animationDiv').mouseover(function(){
+    $(this).css({opacity: 1});
+  });  
+  $('#animationDiv').mouseout(function(){
+    $(this).css({opacity: 0.6});
+  });
   
   // set animation
   window.requestAnimFrame = (function(callback) {    
@@ -61,17 +69,20 @@ function prepareAnimation(){
 
 // init jquery ui slider
 function addSlider(element, min, max, v1, v2){
-  $(function(){
     $(element).slider({
       range: true,
       min: min,
       max: max,
-      values: [v1, v2],
+      range: false,
+      values: [v1, v2, v1],
       slide: function(event, ui){
         slideAnimation();
       }  
     });
-  });
+    
+    // style third slider handle to show animation time
+    $('#slider-range').children('span').eq(2).attr('id', 'thirdhandle');
+    $('#thirdhandle').width("9px").height("5px").css("background", "url(utilities/images/arrow.png)");
 }  
 
 // play button
@@ -153,6 +164,9 @@ function animate(){
     // display time
     $('#time').empty();
     $('#time').append("Zeit: " + parseFloat(timeDiff/1000));
+        
+    // move time slider
+    $('#slider-range').slider("values", 2, timeDiff);
     
     requestAnimFrame(
       function(){

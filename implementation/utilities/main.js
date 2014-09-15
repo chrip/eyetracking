@@ -189,7 +189,6 @@ function saveResult(){
 	ctx.drawImage(document.getElementById('backgroundlayer'), 0, 0);
 	ctx.drawImage(document.getElementById("resultlayer"), 0, 0);
   
-  
 	canvas.toBlob(function(blob){
     // save .png
 		saveAs(blob, filename);
