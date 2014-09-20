@@ -17,76 +17,76 @@ var pauseAnimation = false;
 // keep horizontal slider position
 $(window).scroll(function(){
   $('#animationDiv').css('left',-$(window).scrollLeft()+208);
+  $('#timehandle').css('left',-$(window).scrollLeft()+208);
 });
 
 // create canvas, buttons, slider, init animation
-function prepareAnimation(){
+function prepareAnimation(redraw){
 
-  $('#animationDiv').empty();
+  // draw slider only once to keep intervalls
+  var min = $('#slider-range').slider("option", "min");
+  var max = $('#slider-range').slider("option", "max");
+  if(min.length == 0 || max.length == 0 || redraw){
   
-  $('#animationDiv').append('<strong>Animation:\t</strong>');
+    $('#animationDiv').empty();
+    
+    $('#animationDiv').append('<strong>Animation:\t</strong>');
+    
+    // create animation buttons
+    $('#animationDiv').append('<input type="button" id="playButton" value="Play" onclick="buttonFunc();">');
+    $('#animationDiv').show();
+    
+    // create animation slider
+    var lastElem = 0;
+    for(i = 0; i < $('#fileSelection').find('option:selected').attr('count'); i++){
+      var elem = unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].ft + unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].gd;
+      if(elem > lastElem)
+        lastElem = elem + 1;
+    }
+ 
+    $('#animationDiv').append('<div id="slider-range"/>');
+    
+    addSlider($('#slider-range'), 0, lastElem, 0, lastElem);
   
-  // create animation buttons
-  $('#animationDiv').append('<input type="button" id="playButton" value="Play" onclick="play()">');
-  $('#animationDiv').append('<input type="button" id="playButton" value="Pause" onclick="pause()"><br>');
-  $('#animationDiv').show();
-  
-  // create animation slider
-  var lastElem = 0;
-  for(i = 0; i < $('#fileSelection').find('option:selected').attr('count'); i++){
-    var elem = unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].ft + unsorted_ctnt[i].gazedata[unsorted_ctnt[i].gazedata.length - 1].gd;
-    if(elem > lastElem)
-      lastElem = elem + 1;
+    $('#animationDiv').width(600);
+ 
+    // show time
+    $('#animationDiv').append('<strong id="time">Zeit: </strong>');
+    
+    $('#animationDiv').append('<div id="timehandle" style="width:3px; height:18px; background-color:black; z-index:10; position:fixed; bottom:20px; left:208px" />');
+    
+    // set animation
+    window.requestAnimFrame = (function(callback) {    
+      return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+        function(callback) {
+          window.setTimeout(callback, 1000 / 60);
+        };
+    })();
   }
   
-  var rangewidth = $('#backgroundlayer').width() * 0.6;
- 
-  $('#animationDiv').append('<div id="slider-range"/>');
-  
-  addSlider($('#slider-range'), 0, lastElem, 0, lastElem);
-  
-  $('#animationDiv').width($('#backgroundlayer').width()+6);
- 
-  // show time
-  $('#animationDiv').append('<strong id="time">Zeit: </strong>');
-  // control slider opacity
-  $('#animationDiv').css({opacity: 0.6});
-  $('#animationDiv').mouseover(function(){
-    $(this).css({opacity: 1});
-  });  
-  $('#animationDiv').mouseout(function(){
-    $(this).css({opacity: 0.6});
-  });
-  
-  // set animation
-  window.requestAnimFrame = (function(callback) {    
-    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
-      function(callback) {
-        window.setTimeout(callback, 1000 / 60);
-      };
-  })();
+  $('#slider-range').children('span').eq(0).attr('id', 'firsthandle');
+  $('#timehandle').css("left", parseInt($('#firsthandle').css("left")) + parseInt($('#animationDiv').css("left")));
 }
 
 // init jquery ui slider
 function addSlider(element, min, max, v1, v2){
     $(element).slider({
-      range: true,
+    range: true,
       min: min,
       max: max,
-      range: false,
-      values: [v1, v2, v1],
+      values: [v1, v2],
       slide: function(event, ui){
         slideAnimation();
       }  
     });
-    
-    // style third slider handle to show animation time
-    $('#slider-range').children('span').eq(2).attr('id', 'thirdhandle');
-    $('#thirdhandle').width("9px").height("5px").css("background", "url(utilities/images/arrow.png)");
+
 }  
 
 // play button
 function play(){
+     
+  $('#playButton').prop('value', "Pause"); 
+
   runAnimation = true;
   startvalue = $('#slider-range').slider("values", 0);
   if(startvalue != 0)
@@ -97,6 +97,9 @@ function play(){
 
 // pause button
 function pause(){
+
+  $('#playButton').prop('value', "Play");
+      
   if(runAnimation)
     pauseTime = (new Date).getTime() - startTime;
     
@@ -109,10 +112,20 @@ function pause(){
   slidertime = 0;
 }
 
+// wrap button functionality
+function buttonFunc(){
+
+  if($('#playButton').val() == "Play"){
+    play();
+  }
+  else if($('#playButton').val() == "Pause"){ 
+    pause();
+  }
+}
+
 // silder functionality
 function slideAnimation(){
 
-  //var time = $('#animationRange').val();
   var time = $('#slider-range').slider("values", 0);
   
   slid = true;
@@ -124,6 +137,9 @@ function slideAnimation(){
   // display time
   $('#time').empty();
   $('#time').append("Zeit : " + parseFloat(time/1000));
+  
+  // reposition time element
+  $('#timehandle').css("left", parseInt($('#firsthandle').css("left")) + parseInt($('#animationDiv').css("left")));
   
   var value = $('#visSelect').val();
   
@@ -165,8 +181,12 @@ function animate(){
     $('#time').empty();
     $('#time').append("Zeit: " + parseFloat(timeDiff/1000));
         
-    // move time slider
-    $('#slider-range').slider("values", 2, timeDiff);
+    // move time element
+    var pos = timeDiff / $('#slider-range').slider("option", "max") * $('#animationDiv').width();
+    if(pos >= $('#animationDiv').width())
+      pos = $('#animationDiv').width();
+    pos+= parseInt($('#animationDiv').css("left"));
+    $('#timehandle').css("left", pos);
     
     requestAnimFrame(
       function(){
@@ -204,6 +224,7 @@ function stopAnimation(time){
     continueTime = 0;
     pauseTime = 0;
     slidertime = 0;
+    $('#playButton').prop("value", "Play");
   }
 }
 

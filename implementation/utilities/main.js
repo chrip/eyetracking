@@ -26,6 +26,7 @@ $(document).ready(function(){
 	
 	headerheight = $('#header').height();
 	borderwidth = $('#gazeplotSettingsDiv').width();
+  animationheight = 60;
 	
   // get available files
 	receiveSelection();
@@ -79,7 +80,7 @@ function scaleDimensions(width, height){
 	// scale image
 	var ratio = 1.0;
 	var maxWidth = windowwidth - borderwidth - 30;
-	var maxHeight = windowheight - headerheight - 70;
+	var maxHeight = windowheight - headerheight - animationheight - 32;
 
 	if (width > maxWidth){
 		ratio = maxWidth / width;
@@ -729,6 +730,11 @@ function fitImageToScreen(){
 // prepare drawing of result
 function drawCanvas(src){
   
+  // redraw animation
+  var redraw = false;
+  if(filechanged)
+    redraw = true;
+  
 	// check whether backgroundcanvas needs to be redrawn
   if(filechanged || vischanged){
     $('#backgroundlayer').remove();
@@ -766,7 +772,7 @@ function drawCanvas(src){
     }  
     
     // configure animation
-    prepareAnimation();
+    prepareAnimation(redraw);
       
     // call specific draw functions
     var value = $('#visSelect').val();
