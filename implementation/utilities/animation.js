@@ -8,11 +8,18 @@ var slidervalue = 0;
 var start = true;
 var slid = false;
 var startvalue = 0;
+var startAnimation = [];
+var idx = 0;
+var lastTime = 0;
 
 // animation is running
 var runAnimation = false;
 // animation is paused
 var pauseAnimation = false;
+
+var connectionlayer = [];
+var fixationlayer = [];
+var enumlayer = [];
 
 // keep horizontal slider position
 $(window).scroll(function(){
@@ -64,6 +71,12 @@ function prepareAnimation(redraw){
     })();
   }
   
+  idx = $('#fileSelection').find('option:selected').attr('count');
+  for(var i = 0; i < idx; i++){
+    startAnimation[i] = true;
+  }  
+  
+  
   $('#slider-range').children('span').eq(0).attr('id', 'firsthandle');
   $('#timehandle').css("left", parseInt($('#firsthandle').css("left")) + parseInt($('#animationDiv').css("left")));
 }
@@ -88,6 +101,9 @@ function play(){
   $('#playButton').prop('value', "Pause"); 
 
   runAnimation = true;
+  for(var i = 0; i < idx; i++){
+    startAnimation[i] = true;
+  }  
   startvalue = $('#slider-range').slider("values", 0);
   if(startvalue != 0)
     slid = true;
@@ -130,6 +146,10 @@ function slideAnimation(){
   
   slid = true;
   slidervalue = time;
+  
+  for(var i = 0; i < idx; i++){
+    startAnimation[i] = true;
+  }
   
   var startT = $('#slider-range').slider("values", 0);
   var endT   = $('#slider-range').slider("values", 1);
@@ -225,8 +245,10 @@ function stopAnimation(time){
     pauseTime = 0;
     slidertime = 0;
     $('#playButton').prop("value", "Play");
+    lastTime = 0;
   }
 }
+
 
 function drawGazeplotAnimation(time, startT, endT, display){
   
@@ -240,15 +262,8 @@ function drawGazeplotAnimation(time, startT, endT, display){
 		$('#resultlayer').remove();
 	}
 	
-  var bglWidth  = $('#backgroundlayer').width();
-  var bglHeight = $('#backgroundlayer').height();   
-  
-  var idx = $('#fileSelection').find('option:selected').attr('count');
-  
-  // draw seperate layers for each proband
-  var connectionlayer = new Array(idx);
-  var fixationlayer = new Array(idx);
-  var enumlayer = new Array(idx);
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  var bglHeight = Math.round($('#backgroundlayer').height());
   
   // get radius
   var radius = $('#radiusRange').val();
@@ -257,36 +272,46 @@ function drawGazeplotAnimation(time, startT, endT, display){
   for(var i = 0; i < idx; i++){
     if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
   
-      var i_n = parseInt(i+1);
-    
-      // init seperate canvas layers
-      // connecting lines
-      $('#imageDiv').append('<canvas id="connectionlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
-      connectionlayer[i] = document.getElementById("connectionlayer" + i_n);
-      var connectionctx = connectionlayer[i].getContext("2d");      
-      // get color for connecting lines between fixations from color picker - equal for all probands
-      connectionctx.strokeStyle= $('#lineColor').css("background-color");
-      connectionctx.lineWidth = 4;
-      connectionctx.clearRect(0,0, bglWidth, bglHeight);
+      if(startAnimation[i]){
+        
+        var i_n = parseInt(i+1);
+        
+        $('#fixationlayer'+i_n).remove();
+        $('#connectionlayer'+i_n).remove();
+        $('#enumlayer'+i_n).remove();
       
-      // fixation circles
-      $('#imageDiv').append('<canvas id="fixationlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
-      fixationlayer[i] = document.getElementById("fixationlayer" + i_n);
-      var fixationctx = fixationlayer[i].getContext("2d");
-      // get fixationcolor from color picker - individual color for each proband
-      fixationctx.fillStyle= $('#fixationColor'+parseInt(i+1)).css("background-color");
-      fixationctx.lineWidth = 2;
-      fixationctx.strokeStyle="black";
-      fixationctx.clearRect(0,0, bglWidth, bglHeight);
-      
-      // enumeration of fixations
-      $('#imageDiv').append('<canvas id="enumlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '"></canvas>');
-      enumlayer[i] = document.getElementById("enumlayer" + i_n);
-      var enumctx = enumlayer[i].getContext("2d");
-      enumctx.fillStyle = "black";
-      enumctx.font = "bold 16px Arial";
-      enumctx.textBaseline = "middle"; 
-      enumctx.clearRect(0,0, bglWidth, bglHeight);
+        // init seperate canvas layers
+        // connecting lines
+        $('#imageDiv').append('<canvas id="connectionlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '; display:none"></canvas>');
+        connectionlayer[i] = document.getElementById("connectionlayer" + i_n);
+        var connectionctx = connectionlayer[i].getContext("2d");      
+        // get color for connecting lines between fixations from color picker - equal for all probands
+        connectionctx.strokeStyle= $('#lineColor').css("background-color");
+        connectionctx.lineWidth = 4;
+        connectionctx.clearRect(0,0, bglWidth, bglHeight);
+        
+        // fixation circles
+        $('#imageDiv').append('<canvas id="fixationlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '; display:none"></canvas>');
+        fixationlayer[i] = document.getElementById("fixationlayer" + i_n);
+        var fixationctx = fixationlayer[i].getContext("2d");
+        // get fixationcolor from color picker - individual color for each proband
+        fixationctx.fillStyle= $('#fixationColor'+parseInt(i+1)).css("background-color");
+        fixationctx.lineWidth = 2;
+        fixationctx.strokeStyle="black";
+        fixationctx.clearRect(0,0, bglWidth, bglHeight);
+        
+        // enumeration of fixations
+        $('#imageDiv').append('<canvas id="enumlayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:' + i + '; display:none"></canvas>');
+        enumlayer[i] = document.getElementById("enumlayer" + i_n);
+        var enumctx = enumlayer[i].getContext("2d");
+        enumctx.fillStyle = "black";
+        enumctx.font = "bold 16px Arial";
+        enumctx.textBaseline = "middle"; 
+        enumctx.clearRect(0,0, bglWidth, bglHeight);
+        
+        startAnimation[i] = false;
+        
+      }
       
       var scaleX = 1;
       var scaleY = 1;
@@ -305,19 +330,30 @@ function drawGazeplotAnimation(time, startT, endT, display){
       var t = true;  
       var startIndex = 1;
       var firstIndex = unsorted_ctnt[i].gazedata[0].fi;
+      
+      // begin drawing lines
+      connectionlayer[i] = document.getElementById("connectionlayer" + parseInt(i+1));
+      connectionctx = connectionlayer[i].getContext("2d");
+      connectionctx.beginPath();
+      
+      fixationlayer[i] = document.getElementById("fixationlayer" + parseInt(i+1));
+      fixationctx = fixationlayer[i].getContext("2d");
+      
+      enumlayer[i] = document.getElementById("enumlayer" + parseInt(i+1));
+      enumctx = enumlayer[i].getContext("2d");
         
       // iterate over unsorted gazedata
       for(var j = 0; j < unsorted_ctnt[i].gazedata.length; j++){
         
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
-        if(timestamp <= time && startT <= timestamp){
+        if(timestamp <= time && startT <= timestamp /* && timestamp > lastTime */){
         
           if(t){
             startIndex = unsorted_ctnt[i].gazedata[j].fi;
             t = false;
-          }            
-        
+          }
+          
           // get index
           var index = unsorted_ctnt[i].gazedata[j].fi;
           // get coordinates
@@ -326,9 +362,12 @@ function drawGazeplotAnimation(time, startT, endT, display){
           // get fixationduration
           var duration = unsorted_ctnt[i].gazedata[j].gd;
   
+          if(timestamp+duration < lastTime && !display)
+            continue;
+  
           // draw connecting lines
           if(j > startIndex-firstIndex){
-            line(connectionctx, unsorted_ctnt[i].gazedata[j-1].fx*scaleX, unsorted_ctnt[i].gazedata[j-1].fy*scaleY, unsorted_ctnt[i].gazedata[j].fx*scaleX, unsorted_ctnt[i].gazedata[j].fy*scaleY);
+            line(connectionctx, Math.round(unsorted_ctnt[i].gazedata[j-1].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j-1].fy*scaleY), Math.round(unsorted_ctnt[i].gazedata[j].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j].fy*scaleY)); 
           }
           
           // draw fixation circles
@@ -339,13 +378,18 @@ function drawGazeplotAnimation(time, startT, endT, display){
               factor = 1;
             rad *=factor;
           }
-          circle(fixationctx, x*scaleX, y*scaleY, rad);
+          circle(fixationctx, Math.round(x*scaleX), Math.round(y*scaleY), Math.round(rad));
           
           // print fixation index in the middle of the fixation circle
           var txtwidth = enumctx.measureText(index).width;
           enumctx.fillText(index, x*scaleX-(txtwidth/2), y*scaleY);
+          
+          lastTime = time;
         }  
-      }	
+      }
+
+      // finish lines
+      connectionctx.stroke();
     }
   }  
 
@@ -359,18 +403,11 @@ function drawGazeplotAnimation(time, startT, endT, display){
   for(var k = 0; k < idx; k++){
     if($('input[id=user' + parseInt(k+1) + ']').attr('checked')){
       
-      var k_n = parseInt(k+1);
-      
       if($('#showPath').attr('checked'))
         resultctx.drawImage(connectionlayer[k],0,0);  
       resultctx.drawImage(fixationlayer[k],0,0);
       if($('#showEnum').attr('checked'))
         resultctx.drawImage(enumlayer[k],0,0);	
-      
-      // remove layers since they are not necessary anymore
-      $('#fixationlayer'+k_n).remove();
-      $('#connectionlayer'+k_n).remove();
-      $('#enumlayer'+k_n).remove();
     }
   }  
   
@@ -429,8 +466,6 @@ function drawHeatmapAnimation(time, startT, endT, display){
     scaleX = bglWidth  / imageObj.width;
     scaleY = bglHeight / imageObj.height;
 	}
-  
-  var idx = $('#fileSelection').find('option:selected').attr('count');
   
   // display fixations while moving silder
   if(display)
@@ -537,8 +572,6 @@ function drawAttentionmapAnimation(time, startT, endT, display){
   // display fixations while moving sliders
   if(display)
     time = endT;
-        
-  var idx = $('#fileSelection').find('option:selected').attr('count');
   
   // iterate over available probands, if selected by user add its gazedata to heatmap (accumulated attentionmap)
   for(var i = 0; i < idx; i++){

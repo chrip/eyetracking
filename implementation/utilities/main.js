@@ -26,7 +26,7 @@ $(document).ready(function(){
 	
 	headerheight = $('#header').height();
 	borderwidth = $('#gazeplotSettingsDiv').width();
-  animationheight = 60;
+  animationheight = 63;
 	
   // get available files
 	receiveSelection();
@@ -494,6 +494,14 @@ function drawHeatmap(){
 
 // visualize gaze plot
 function drawGazeplot(){
+  
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+  
+  for(var i = 0; i < idx; i++){
+    $('#fixationlayer'+parseInt(i+1)).remove();
+    $('#connectionlayer'+parseInt(i+1)).remove();
+    $('#enumlayer'+parseInt(i+1)).remove();
+  }
 
 	// remove heatmap layer if present
 	if($('#heatmapArea').length > 0){
@@ -507,8 +515,6 @@ function drawGazeplot(){
 	
   var bglWidth  = $('#backgroundlayer').width();
   var bglHeight = $('#backgroundlayer').height();   
-  
-  var idx = $('#fileSelection').find('option:selected').attr('count');
   
   // draw seperate layers for each proband
   var connectionlayer = new Array(idx);
@@ -566,6 +572,9 @@ function drawGazeplot(){
       ctnt[i].gazedata.sort(function(a,b){
         return (b.gd > a.gd) ? 1 : ((b.gd < a.gd) ? -1 : 0);
       });
+      
+      // begin drawing lines
+      connectionctx.beginPath();
 
       // iterate over sorted gazedata
       for(var j = 0; j < ctnt[i].gazedata.length; j++){
@@ -580,7 +589,7 @@ function drawGazeplot(){
         
         // draw connecting lines
         if(j > 0){
-          line(connectionctx, unsorted_ctnt[i].gazedata[j-1].fx*scaleX, unsorted_ctnt[i].gazedata[j-1].fy*scaleY, unsorted_ctnt[i].gazedata[j].fx*scaleX, unsorted_ctnt[i].gazedata[j].fy*scaleY);
+          line(connectionctx, Math.round(unsorted_ctnt[i].gazedata[j-1].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j-1].fy*scaleY), Math.round(unsorted_ctnt[i].gazedata[j].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j].fy*scaleY)); 
         }
         
         // draw fixation circles
@@ -588,12 +597,15 @@ function drawGazeplot(){
           var rad = radius / 1000 * duration;
         }
         
-        circle(fixationctx, x*scaleX, y*scaleY, rad);
+        circle(fixationctx, Math.round(x*scaleX), Math.round(y*scaleY), Math.round(rad));
         
         // print fixation index in the middle of the fixation circle
         var txtwidth = enumctx.measureText(index).width;
         enumctx.fillText(index, x*scaleX-(txtwidth/2), y*scaleY);
-      }	
+      }
+
+      // finish line drawing
+      connectionctx.stroke();
     }
   }  
 
@@ -629,10 +641,8 @@ function drawGazeplot(){
 // draw line from (sx,sy) to (ex, ey)
 function line(ctx, sx, sy, ex, ey){
 
-	ctx.beginPath();
 	ctx.moveTo(sx, sy);
 	ctx.lineTo(ex, ey);
-	ctx.stroke();
 }
 
 //draw circle with center at (x,y) and radius r
