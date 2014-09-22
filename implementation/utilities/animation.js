@@ -271,7 +271,7 @@ function drawGazeplotAnimation(time, startT, endT, display){
   // iterate over probands if selected by user
   for(var i = 0; i < idx; i++){
     if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
-  
+    
       if(startAnimation[i]){
         
         var i_n = parseInt(i+1);
@@ -347,12 +347,7 @@ function drawGazeplotAnimation(time, startT, endT, display){
         
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
-        if(timestamp <= time && startT <= timestamp /* && timestamp > lastTime */){
-        
-          if(t){
-            startIndex = unsorted_ctnt[i].gazedata[j].fi;
-            t = false;
-          }
+        if(timestamp <= time && startT <= timestamp){ 
           
           // get index
           var index = unsorted_ctnt[i].gazedata[j].fi;
@@ -360,14 +355,20 @@ function drawGazeplotAnimation(time, startT, endT, display){
           var x = unsorted_ctnt[i].gazedata[j].fx;
           var y = unsorted_ctnt[i].gazedata[j].fy;
           // get fixationduration
-          var duration = unsorted_ctnt[i].gazedata[j].gd;
-  
+          var duration = unsorted_ctnt[i].gazedata[j].gd; 
+          
+         if(t){
+            startIndex = index;
+            t = false;
+          }
+          
+          // draw only diff
           if(timestamp+duration < lastTime && !display)
-            continue;
-  
+            continue;          
+          
           // draw connecting lines
           if(j > startIndex-firstIndex){
-            line(connectionctx, Math.round(unsorted_ctnt[i].gazedata[j-1].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j-1].fy*scaleY), Math.round(unsorted_ctnt[i].gazedata[j].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j].fy*scaleY)); 
+            line(connectionctx, Math.round(unsorted_ctnt[i].gazedata[j-1].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j-1].fy*scaleY), Math.round(x*scaleX), Math.round(y*scaleY)); 
           }
           
           // draw fixation circles
