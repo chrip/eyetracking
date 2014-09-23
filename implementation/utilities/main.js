@@ -265,7 +265,7 @@ function visualizationChanged(){
   oldvisualization = visualization;
   
   vischanged = true;
-  
+
 	drawCanvas(g_imgSrc);
 }
 
@@ -748,8 +748,6 @@ function drawCanvas(src){
 	// check whether backgroundcanvas needs to be redrawn
   if(filechanged || vischanged){
     $('#backgroundlayer').remove();
-    filechanged = false;
-    vischanged = false;
   }  
 	
 	// draw input image as background to canvas
@@ -793,7 +791,16 @@ function drawCanvas(src){
       // register color picker for connecting lines
       registerColorpicker($('#lineColorpicker'), $('#lineColor'), '#000000');
       
-      drawGazeplot();
+      // draw selected interval
+      if(vischanged){
+        var s = $('#slider-range').slider("values", 0);
+        var e = $('#slider-range').slider("values", 1);
+        drawGazeplotAnimation(e, s, e, true);
+      }
+      // draw complete gazepath
+      else{      
+        drawGazeplot();
+      }  
     }
       
     if(value == "heatmap"){
@@ -808,7 +815,16 @@ function drawCanvas(src){
       $('#c2Colorpicker').css('margin-top', '30px').css('margin-left', '73px');
       $('#c3Colorpicker').css('margin-top', '30px').css('margin-left', '136px');
         
-      drawHeatmap();
+      // draw selected interval
+      if(vischanged){
+        var s = $('#slider-range').slider("values", 0);
+        var e = $('#slider-range').slider("values", 1);
+        drawHeatmapAnimation(e, s, e, true);
+      }
+      // draw complete heatmap
+      else{      
+        drawHeatmap();
+      }
     }	
       
     if(value == "attentionmap"){
@@ -819,10 +835,24 @@ function drawCanvas(src){
       // place color picker
       $('#attColorpicker').css('margin-top', '30px').css('margin-left', '10px');
       
-      drawAttentionmap();
+      // draw selected interval
+      if(vischanged){
+        var s = $('#slider-range').slider("values", 0);
+        var e = $('#slider-range').slider("values", 1);
+        drawAttentionmapAnimation(e, s, e, true);
+      }
+      // draw complete gazepath
+      else{      
+        drawAttentionmap();
+      }
+    }
+    
+    if(filechanged || vischanged){
+      filechanged = false;
+      vischanged = false;
     }
   }
   
   // set image source
-	imageObj.src = 'data/' + src;
+	imageObj.src = 'data/' + src; 
 }
