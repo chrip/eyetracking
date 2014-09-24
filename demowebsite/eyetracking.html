@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Eyetracking Visualisierung</title>
+
+    <!-- Bootstrap Core CSS - Uses Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+   <link href="utilities/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="utilities/css/eyetracking.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="utilities/css/css.css" rel="stylesheet" type="text/css">
+    <link href="utilities/css/css_002.css" rel="stylesheet" type="text/css">
+    
+    <!-- Eyetracking CSS -->
+    <link href="utilities/colorpicker/colorpicker.css" rel="stylesheet" type="text/css" media="screen">
+    <link href="utilities/css/jquery-ui.css"rel="stylesheet" type="text/css">
+    
+    <!--Eyetracking JS-->
+    <script type='text/javascript' src='utilities/js/jquery.js'></script>
+    <script type='text/javascript' src='utilities/js/main.js'></script>
+    <script type='text/javascript' src='utilities/js/animation.js'></script>
+    <script type='text/javascript' src='utilities/colorpicker/colorpicker.js'></script>
+    <script type='text/javascript' src='utilities/js/FileSaver.js'></script>
+    <script type='text/javascript' src='utilities/js/canvas-toBlob.js'></script>
+    <script type='text/javascript' src='utilities/js/heatmap.js'></script>
+    <script type='text/javascript' src='utilities/js/jquery-ui.js'></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body id="page-top" class="index">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Eyetracking Visualisierung</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#page-top">Eyetracking Visualisierung</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="hidden active">
+                        <a href="#page-top"></a>
+                    </li>
+                    <li class="page-scroll">
+                        <a href="#demo">Demo</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container-fluid -->
+    </nav>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="intro-text">
+                        <span class="name">Eyetracking Visualisierung</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Demo Section -->
+    <section class="success" id="demo">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>Demo</h2>
+                    <hr class="eyetracking">
+                </div>
+            </div>
+            <div id="header">
+                <div style="width:100%;">
+                    <div align="left">
+                        <strong>Dateiauswahl: </strong>
+                        <select name="fileSelection" id="fileSelection" onchange="fileChanged()">
+                        <option value=donothing>Bitte wählen</option>
+                        </select>
+                        <strong id="visTag" style="display: none;">Visualisierung: </strong>
+                        <select name="visualizationSelection" id="visSelect" style="display: none;" onchange="visualizationChanged()">
+                        <option value="gazeplot">Blickpfade</option>
+                        <option value="heatmap">Heatmap</option>
+                        <option value="attentionmap">Attentionmap</option>
+                        </select>
+                        <input type="button" id="saveButton" value="Ergebnis speichern" style="display: none;" onclick="saveResult()">
+                        <input type="checkbox" name="fitToScreen" id="fitToScreen" value="fitToScreen" style="display: none;" onchange="fitImageToScreen()"><strong id="ftsTag" style="display: none"> Fit-to-Screen</strong></p>
+                    </div>
+                    <br>
+                </div>
+            </div>    
+                <div class="settingsDiv" id="gazeplotSettingsDiv">
+                    <h3>Einstellungen:</h3>
+                    <p><input type="checkbox" name="showEnum" id="showEnum" value="showEnum" onchange="drawGazeplot()" checked="checked"> Zeige Reihenfolge</p>
+                    <p><input type="checkbox" name="showPath" id="showPath" value="showPath" onchange="drawGazeplot()" checked="checked"> Zeige Blickpfad</p>
+                    Radius:
+                    <select name="radiusSelect" id="radiusSelect" onchange="drawGazeplot()">
+                      <option value="duration">Dauer</option>
+                      <option value="samesize">gleiche Größe</option>
+                    </select>
+                    <p></p>
+                    Skalieren: <input type="range" id="radiusRange" min="1" max="100" value="50" onchange="drawGazeplot()" />
+                    Opazität: <input type="range" id="opacityRange" min="0" max="100" value="100" onchange="drawGazeplot()" />
+                    <div class="linecolorpicker" id="lineColor" style="background:#000000; width:30px; height:30px; z-index:5; border:2px solid #000000;" onclick="showColorpicker(lineColorpicker)">
+                      <p style="margin-left:35px">Linienfarbe</p>
+                    </div>
+                    <div id="lineColorpicker"></div>
+                    <p></p>
+                </div>
+
+                <div class="settingsDiv" id="heatmapSettingsDiv">
+                    <h3>Einstellungen:</h3>
+                    Count:
+                    <select name="countSelect" id="countSelect" onchange="drawHeatmap()">
+                      <option value="duration">Dauer</option>
+                      <option value="default">Einheitlich</option>
+                    </select>
+                    <p></p>
+                    Radius: <input type="range" id="heatmapRadius" min="2" max="100" value="30" step="2" onchange="drawHeatmap()" />
+                    Opazität: <input type="range" id="heatmapOpacity" min="1" max="100" value="100" onchange="drawHeatmap()" />
+                    <p>Farbgradient:</p>
+                    <div id="c1Color" style="background:#0000ff; width:50px; height:30px; z-index:5; border:2px solid #000000; margin-left:10px; float:left; position:relative; display:inline-block;" onclick="showColorpicker(c1Colorpicker)"></div>
+                    <div id="c1Colorpicker"></div>
+                    <div id="c2Color" style="background:#00ff00; width:50px; height:30px; z-index:5; border:2px solid #000000; margin-left:9px; float:left; position:relative; display:inline-block;" onclick="showColorpicker(c2Colorpicker)"></div>
+                    <div id="c2Colorpicker"></div>
+                    <div id="c3Color" style="background:#ff0000; width:50px; height:30px; z-index:5; border:2px solid #000000; margin-right:10px; float:right; position:relative; display:inline-block;" onclick="showColorpicker(c3Colorpicker)"></div>
+                    <div id="c3Colorpicker"></div>
+                </div>
+
+                <div class="settingsDiv" id="attentionmapSettingsDiv">
+                    <h3>Einstellungen:</h3>
+                    Count:
+                    <select name="attentionCountSelect" id="attentionCountSelect" onchange="drawAttentionmap()">
+                      <option value="duration">Dauer</option>
+                      <option value="default">Einheitlich</option>
+                    </select>
+                    <p></p>
+                    Radius: <input type="range" id="attentionmapRadius" min="2" max="100" value="30" step="2" onchange="drawAttentionmap()" />
+                    Cover-Opazität: <input type="range" id="attentionmapOpacity" min="1" max="100" value="100" onchange="drawAttentionmap()" />
+                    <div class="attcolorpicker" id="attColor" style="background:#000000; width:30px; height:30px; z-index:5; border:2px solid #000000; margin-left:10px; float:left; position:relative; display:inline-block;" onclick="showColorpicker(attColorpicker)">
+                      <p style="margin-left:35px">Coverfarbe</p>
+                    </div>
+                    <div id="attColorpicker"></div>
+                </div>
+
+                <div id="imageDiv" style="position:relative; margin-left:200px"></div>
+                <div id="animationDiv"></div>
+                <div id="multipleUserDiv"/>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="footer-above">
+            <div class="container">
+                <div class="row">
+                    <div class="footer-col col-md-4">
+                        <h3>Implementation</h3>
+                        <p>Christopher Krey<br>
+                        Universität Koblenz-Landau<br>
+                        </p>
+                    </div>
+                    <div class="footer-col col-md-4">
+                        <h3>Ansprechpartner</h3>
+                        <p>
+                        <a href="http://www.uni-koblenz-landau.de/campus-koblenz/fb4/west/staff/christoph-schaefer">Christoph Schaefer</a><br>
+                        Raum B104<br>
+                        Email: chrisschaefer at uni-koblenz.de<br>
+                        Tel: +49 261 287-2786<br>
+                        </p>
+                    </div>
+                    <div class="footer-col col-md-4">
+                        <h3>Über WeST</h3>
+                        <p><a href="http://west.uni-koblenz.de/">Institute for Web Science and Technologies</a><br>
+                        Universität Koblenz-Landau<br>
+                        Universitätsstraße 1<br>
+                        56070 Koblenz</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button (Only visible on small and extra-small screen sizes) -->
+    <div class="scroll-top page-scroll visible-xs visble-sm">
+        <a class="btn btn-primary" href="#page-top">
+            <i class="fa fa-chevron-up"></i>
+        </a>
+    </div>
+
+
+</body></html>

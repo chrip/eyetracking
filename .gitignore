@@ -1,3 +1,6 @@
 /implementation/*.pyc
 /implementation/temp
 /implementation/*~
+/demowebsite/*.pyc
+/demowebsite/temp
+/demowebsite/*~
