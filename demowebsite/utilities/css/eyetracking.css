@@ -67,10 +67,10 @@ hr.eyetrackingdark {
 
 header {
     color: #fff;
-    background: -webkit-linear-gradient(#936e12, #2f0501);
-    background: -o-linear-gradient(#936e12, #2f0501);
-    background: -moz-linear-gradient(#936e12, #2f0501);
-    background: linear-gradient(#936e12, #2f0501);
+    background: -webkit-linear-gradient(#336699, #003366);
+    background: -o-linear-gradient(#336699, #003366);
+    background: -moz-linear-gradient(#336699, #003366);
+    background: linear-gradient(#336699, #003366);
 }  
 
 header .container {
@@ -165,7 +165,7 @@ header .intro-text .skills {
 
 section {
     padding: 100px 0;
-    background-color: #2f0501;
+    background-color: #003366;
 }
 
 section h2 {
@@ -185,24 +185,18 @@ select{
 .settingsDiv{
     width: 200px;
     height: 300px;
-    background: #936e12;
     float: left;
     display: none;
-    border-top: 3px solid #000000;
-    border-left: 3px solid #000000;
-    border-right: 3px solid #000000;
+    padding-right:15px;
 }
 
 #multipleUserDiv {
     position: relative;
     width: 200px;
     min-height: 100px;
-    background: #936e12;
     margin-top: 300px;
     display:none;
-    border-bottom: 3px solid #000000;
-    border-left: 3px solid #000000;
-    border-right: 3px solid #000000;
+    padding-right:15px;
 }
 
 #animationDiv{
@@ -210,9 +204,7 @@ select{
     bottom: 1px;
     margin-left: 175px;
     display:none;
-    background: #936e12;
     z-index: 9;
-    border: 3px solid #000;
 }     
     
 #timehandle{
@@ -246,7 +238,7 @@ input[type=button]{
 }
 
 #slider-range .ui-slider-range{
-    background: #2f0501;
+    background: #003366;
 }    
 
 .btn-outline {
@@ -337,7 +329,7 @@ footer h3 {
 
 footer .footer-above {
     padding-top: 50px;
-    background-color: #936e12;
+    background-color: #003366;
 }
 
 footer .footer-col {
