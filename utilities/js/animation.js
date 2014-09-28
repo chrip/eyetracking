@@ -11,6 +11,7 @@ var startvalue = 0;
 var startAnimation = [];
 var idx = 0;
 var lastTime = 0;
+var paused = false;
 
 // animation is running
 var runAnimation = false;
@@ -122,9 +123,11 @@ function pause(){
     
   runAnimation = false;
   pauseAnimation = true;
+  paused = true;
       
   // save slidervalue to start from right position
   slidervalue = $('#slider-range').slider("values", 0);
+  slidervalue = timeDiff;
   
   slidertime = 0;
 }
@@ -247,6 +250,7 @@ function stopAnimation(time){
     slidertime = 0;
     $('#playButton').prop("value", "Play");
     lastTime = 0;
+    slidervalue = $('#slider-range').slider("values", 0);
   }
 }
 
@@ -364,7 +368,7 @@ function drawGazeplotAnimation(time, startT, endT, display){
           }
           
           // draw only diff
-          if(timestamp+duration < lastTime && !display)
+          if(timestamp+duration < lastTime && !display && !paused)
             continue;          
           
           // draw connecting lines
