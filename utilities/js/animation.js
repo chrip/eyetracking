@@ -375,7 +375,7 @@ function drawGazeplotAnimation(time, startT, endT, display){
           if(j > startIndex-firstIndex){
             line(connectionctx, Math.round(unsorted_ctnt[i].gazedata[j-1].fx*scaleX), Math.round(unsorted_ctnt[i].gazedata[j-1].fy*scaleY), Math.round(x*scaleX), Math.round(y*scaleY)); 
           }
-          
+                   
           // draw fixation circles
           if($('#radiusSelect').find('option:selected').val() == "duration"){
             var rad = radius / 1000 * duration;
@@ -384,6 +384,14 @@ function drawGazeplotAnimation(time, startT, endT, display){
               factor = 1;
             rad *=factor;
           }
+          else if($('#radiusSelect').find('option:selected').val() == "samesize"){
+            var rad = radius;
+            var factor = (time - timestamp) / duration;
+            if(factor > 1)
+              factor = 1;
+            rad *=factor;
+          }
+          
           circle(fixationctx, Math.round(x*scaleX), Math.round(y*scaleY), Math.round(rad));
           
           // print fixation index in the middle of the fixation circle

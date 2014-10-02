@@ -596,6 +596,9 @@ function drawGazeplot(){
         if($('#radiusSelect').find('option:selected').val() == "duration"){
           var rad = radius / 1000 * duration;
         }
+        else if($('#radiusSelect').find('option:selected').val() == "samesize"){
+          var rad = radius;
+        }
         
         circle(fixationctx, Math.round(x*scaleX), Math.round(y*scaleY), Math.round(rad));
         
