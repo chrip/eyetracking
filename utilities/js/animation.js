@@ -110,6 +110,7 @@ function play(){
   if(startvalue != 0)
     slid = true;
     startchanged = true;
+  
   animate();
 }
 
@@ -234,7 +235,18 @@ function animate(){
       drawHeatmapAnimation(timeDiff, startT, endT, false);
     if(value == "attentionmap")
       drawAttentionmapAnimation(timeDiff, startT, endT, false);
+      
+    // disable options while playing animation
+    $(".settingsDiv :input").attr('disabled', true);
+    $("#multipleUserDiv :input").attr('disabled', true);
+    $('#slider-range').slider({disabled: true});
   }
+  if(!runAnimation){
+    // enable options while not playing animation
+    $(".settingsDiv :input").attr('disabled', false);
+    $("#multipleUserDiv :input").attr('disabled', false);
+    $('#slider-range').slider({disabled: false});
+  }  
 }  
 
 // stop animation

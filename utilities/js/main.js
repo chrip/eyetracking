@@ -64,14 +64,16 @@ function registerColorpicker(elem1, elem2, clr){
 
 // display color picker
 function showColorpicker(elem){
-
-	if(cp_visible){
-		$(elem).fadeOut(500);
-	}	
-	else{	
-		$(elem).fadeIn(500);
-	}	
-	cp_visible = !cp_visible;
+  // prevent colorpicker from pop up while animation is running
+  if(!runAnimation){
+    if(cp_visible){
+      $(elem).fadeOut(500);
+    }	
+    else{	
+      $(elem).fadeIn(500);
+    }	
+    cp_visible = !cp_visible;
+  }
 }
 
 // scale data to available screen space
