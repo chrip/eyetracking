@@ -57,7 +57,11 @@ def listFiles():
         f = csvfile.partition(".")[0]
         
         # create gaze data files for matching pairs
-        prepareGazeData(f, extractCSVData("data/"+csvfile));
+        prepareGazeData(f, extractCSVData("data/"+csvfile))
+        
+        urlfile = open("temp/" + f + "_url.json", 'w')
+        urlfile.write(extractURLChange("data/"+csvfile))
+        urlfile.close()
           
   for f in list:
           
@@ -72,6 +76,59 @@ def listFiles():
   selectionfile.close()
   
   #print content
+  
+def extractURLChange(filename):
+
+  file = open(filename, 'rb')
+  reader = csv.reader(file)
+  
+  list = "{\"timestamps\":["
+  
+  rownum = 0
+  line = ""
+  
+  first = True
+  
+  for row in reader:
+    if rownum == 0:
+      header = row
+    else:
+      colnum = 0
+      list += "{"
+      stamp = 0
+      
+      for col in row:
+        if (header[colnum] == 'RecordingTimestamp'):
+          if first:
+            starttime = int(col)
+            first = False
+          stamp = int(col) - starttime
+        elif (header[colnum] == 'StudioEvent' and col == 'URLStart'):
+          line += "\"starttime\":" + str(stamp) + ","
+        elif (header[colnum] == 'StudioEventData' and col != '' and line != ""):
+          line += "\"data\": \"" + col + "\"},"
+          #print line
+        
+        colnum += 1
+      
+      list += line
+      if list[len(list)-1] == "{":
+        list = list[:-1] 
+      line = ""
+      
+    rownum += 1
+  # remove last comma  
+  list = list[:-1]
+  if list[len(list)-1] == ":":
+    list += "{}}"
+  else:
+    list += "]}"
+  
+  file.close() 
+
+  #print list
+  return list
+    
 
 # get relevant content from .csv files
 def extractCSVData(filename):

@@ -30,6 +30,7 @@ $(document).ready(function(){
 	
   // get available files
 	receiveSelection();
+
 });
 
 // register color picker
@@ -139,6 +140,40 @@ function receiveCanvasContent(value){
   
 }		
 
+function receiveChanges(){
+
+  var value = $('#fileSelection').val();
+  
+  // number of suitable gazedatafiles 
+  var idx = $('#fileSelection').find('option:selected').attr('count');
+
+  for(var i = 0; i < idx; i++){
+  
+    var j = (i < 10 ? '0' : '');
+    var s = value + "_" + j + parseInt(i+1);
+  
+    $.ajax({
+      type: 'GET',
+      url: 'temp/' + s + "_url.json",
+      datatype: "application/json",
+      success: function(data){
+        
+        if(data.timestamps[0] === undefined)
+          console.log("no clicks in file");
+        else  
+          console.log("clicks available");
+        
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+          console.log("jq: " + JSON.stringify(jqXHR));
+          console.log("textStatus: " + textStatus);
+          console.log("errorThrown:" + errorThrown);
+          console.log('failed to load gaze data');			
+     }
+    });   
+  }
+}
+
 // get gaze data files from server which fit to the chosen image
 function receiveGD(value){
   
@@ -244,6 +279,8 @@ function fileChanged(){
 		
     // manage settings dialog
     manageSettings($('#visSelect').val());
+    
+    receiveChanges();
 	}
   
   // display choose dialog for available probands
