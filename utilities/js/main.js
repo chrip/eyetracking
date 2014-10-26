@@ -30,7 +30,7 @@ $(document).ready(function(){
 	
   // get available files
 	receiveSelection();
-
+  
 });
 
 // register color picker
@@ -96,7 +96,7 @@ function scaleDimensions(width, height){
 		width *= ratio;
 		height = maxHeight;
 	}	
-	
+  
 	return [width, height];
 }
 
@@ -156,13 +156,11 @@ function receiveChanges(){
       type: 'GET',
       url: 'temp/' + s + "_url.json",
       datatype: "application/json",
+      async: false,
       success: function(data){
-        
-        if(data.timestamps[0] === undefined)
-          console.log("no clicks in file");
-        else  
-          console.log("clicks available");
-        
+      
+          clicks[i] = data;
+          console.log(clicks[i]);
       },
       error: function(jqXHR, textStatus, errorThrown) {
           console.log("jq: " + JSON.stringify(jqXHR));
@@ -172,6 +170,7 @@ function receiveChanges(){
      }
     });   
   }
+
 }
 
 // get gaze data files from server which fit to the chosen image
@@ -336,8 +335,8 @@ function drawAttentionmap(){
 	}
    
   // backgroundlayer dimensions 
-  var bglWidth  = $('#backgroundlayer').width();
-  var bglHeight = $('#backgroundlayer').height(); 
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  var bglHeight = Math.round($('#backgroundlayer').height());
    
   // append attentionmap 
   $('#imageDiv').append('<div id="attentionmapArea" />');
@@ -442,8 +441,8 @@ function drawHeatmap(){
 		$('#resultlayer').remove();
 	}
 
-  var bglWidth  = $('#backgroundlayer').width();
-  var bglHeight = $('#backgroundlayer').height();   
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  var bglHeight = Math.round($('#backgroundlayer').height());   
 
   // append heatmap
 	$('#imageDiv').append('<div id=\'heatmapArea\' />');
@@ -552,8 +551,8 @@ function drawGazeplot(){
 		$('#resultlayer').remove();
 	}
 	
-  var bglWidth  = $('#backgroundlayer').width();
-  var bglHeight = $('#backgroundlayer').height();   
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  var bglHeight = Math.round($('#backgroundlayer').height());   
   
   // draw seperate layers for each proband
   var connectionlayer = new Array(idx);
@@ -678,6 +677,9 @@ function drawGazeplot(){
   }  
   
   $('#resultlayer').css({position: 'absolute'});
+      
+  $('#resultlayer').bind('click', canvasClick);
+  
 }
 
 // draw line from (sx,sy) to (ex, ey)
@@ -804,8 +806,8 @@ function drawCanvas(src){
     if(fitted){
       // get scaled canvas size
       var arr = scaleDimensions(imgW, imgH);	
-      imgW = Math.floor(arr[0]);
-      imgH = Math.floor(arr[1]);
+      imgW = Math.round(arr[0]);
+      imgH = Math.round(arr[1]);
     }
     
     $('#demo').height(imgH + 400);
@@ -822,10 +824,11 @@ function drawCanvas(src){
       // draw image to canvas
       ctx1.drawImage(imageObj, 0, 0, imgW, imgH);
     }  
-    
+  
     // configure animation
     prepareAnimation(redraw);
-      
+    prepareClick();
+    
     // call specific draw functions
     var value = $('#visSelect').val();
       
@@ -834,6 +837,9 @@ function drawCanvas(src){
       
       // register color picker for connecting lines
       registerColorpicker($('#lineColorpicker'), $('#lineColor'), '#000000');
+      
+      var e = $('#slider-range').slider("values", 1);
+      drawClick(e);
       
       // draw selected interval
       if(vischanged){
@@ -895,8 +901,8 @@ function drawCanvas(src){
       filechanged = false;
       vischanged = false;
     }
-  }
   
+  }; 
   // set image source
 	imageObj.src = 'data/' + src; 
 }

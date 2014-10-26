@@ -12,6 +12,7 @@ var startAnimation = [];
 var idx = 0;
 var lastTime = 0;
 var paused = false;
+var clicks = [];
 
 // animation is running
 var runAnimation = false;
@@ -184,6 +185,7 @@ function animate(){
     if(start){
       startTime = (new Date()).getTime();
       start = false;
+      prepareClick();
     }
     
     var time = (new Date()).getTime();
@@ -198,6 +200,7 @@ function animate(){
     if(slid){
       slidertime = slidervalue - timeDiff;
       slid = false;
+      prepareClick();
     }  
     
     timeDiff+= slidertime;
@@ -228,6 +231,8 @@ function animate(){
     var endT   = $('#slider-range').slider("values", 1);
     
     // call animation
+    drawClick(timeDiff);  
+    
     var value = $('#visSelect').val();
     if(value == "gazeplot")
       drawGazeplotAnimation(timeDiff, startT, endT, false);
@@ -266,6 +271,100 @@ function stopAnimation(time){
   }
 }
 
+function prepareClick(){
+
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  var bglHeight = Math.round($('#backgroundlayer').height());
+  var clicklayer = new Array(idx);
+  
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+    
+        var i_n = parseInt(i+1);
+        
+        $('#clicklayer'+i_n).remove();
+        
+        $('#imageDiv').append('<canvas id="clicklayer' + i_n + '" width="' + bglWidth + '" height="' + bglHeight + '" style="border:3px solid #000000; z-index:1; position:absolute"></canvas>');
+        clicklayer[i] = document.getElementById("clicklayer" + i_n);
+        var clickctx = clicklayer[i].getContext("2d");      
+        clickctx.clearRect(0,0, bglWidth, bglHeight);
+        
+    }    
+  }    
+}      
+
+function drawClick(time){
+
+  var clicklayer = new Array(idx);
+  var bglWidth  = Math.round($('#backgroundlayer').width());
+  
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+    
+        var i_n = parseInt(i+1);
+            
+        // iterate over clicks
+        for(var j = 0; j < clicks[i].timestamps.length; j++){
+          
+          // get timestamp
+          var lt = clicks[i].timestamps[j].lt;
+          // get coordinates
+          var lx = clicks[i].timestamps[j].lx;
+          var ly = clicks[i].timestamps[j].ly;
+
+          //scaling
+          if(bglWidth != imageObj.width){
+            var factor = parseFloat(bglWidth / imageObj.width);
+            lx *= factor;
+            ly *= factor;
+          }
+            
+          //var i_n = parseInt(i+1);
+          clicklayer[i] = document.getElementById("clicklayer" + i_n);
+          var clickctx = clicklayer[i].getContext("2d"); 
+          clickctx.fillStyle= "yellow";
+          clickctx.lineWidth = 2;
+          clickctx.strokeStyle="black";
+          
+          if(lt <= time)
+            circle(clickctx, lx, ly, 20);
+        }
+       
+    }
+  }
+}
+
+function canvasClick(event){
+  var layer = document.getElementById("resultlayer");
+    var bglWidth  = Math.round($('#backgroundlayer').width());
+    var r =20;
+  // iterate over clicks
+  for(var i = 0; i < idx; i++){
+    if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
+  for(var j = 0; j < clicks[i].timestamps.length; j++){
+
+    var x = event.pageX - $('#imageDiv').position().left - 200;
+    var y = event.pageY - $('#imageDiv').position().top;
+          
+          // get timestamp
+          var lt = clicks[i].timestamps[j].lt;
+          // get coordinates
+          var lx = clicks[i].timestamps[j].lx;
+          var ly = clicks[i].timestamps[j].ly;
+
+          //scaling
+          if(bglWidth != imageObj.width){
+            var factor = parseFloat(bglWidth / imageObj.width);
+            lx *= factor;
+            ly *= factor;
+          }
+                    
+          if(y > ly - r && y < ly + r && x > lx - r && x < lx + r)
+            console.log("link clicked");
+  }
+  }
+  }
+}    
 
 function drawGazeplotAnimation(time, startT, endT, display){
   
@@ -364,6 +463,7 @@ function drawGazeplotAnimation(time, startT, endT, display){
         
         // get fixation timestamp
         var timestamp = unsorted_ctnt[i].gazedata[j].ft;
+        
         if(timestamp <= time && startT <= timestamp){ 
           
           // get index
@@ -438,9 +538,13 @@ function drawGazeplotAnimation(time, startT, endT, display){
   }  
   
   $('#resultlayer').css({position: 'absolute'});  
+      
+  $('#resultlayer').bind('click', canvasClick);
+  
   
   // stop animation
   stopAnimation(time);
+      
 }
   
 // visualize heatmap

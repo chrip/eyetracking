@@ -88,6 +88,7 @@ def extractURLChange(filename):
   line = ""
   
   first = True
+  leftClick = False
   
   for row in reader:
     if rownum == 0:
@@ -103,10 +104,19 @@ def extractURLChange(filename):
             starttime = int(col)
             first = False
           stamp = int(col) - starttime
-        elif (header[colnum] == 'StudioEvent' and col == 'URLStart'):
-          line += "\"starttime\":" + str(stamp) + ","
-        elif (header[colnum] == 'StudioEventData' and col != '' and line != ""):
-          line += "\"data\": \"" + col + "\"},"
+        # log leftclick position  
+        elif(header[colnum] == 'MouseEvent' and col == 'Left'):
+          leftClick = True
+        elif(header[colnum] == 'MouseEventX (MCSpx)' and col != '' and leftClick):
+          line += "\"lx\":" + col + ","
+        elif(header[colnum] == 'MouseEventY (MCSpx)' and col != '' and leftClick):
+          line += "\"ly\":" + col + ","
+          line += "\"lt\":" + str(stamp) + "},"
+          leftClick = False
+        #elif (header[colnum] == 'StudioEvent' and col == 'URLStart'):
+          #line += "\"lt\":" + str(stamp) + ","
+        #elif (header[colnum] == 'StudioEventData' and col != '' and line != ""):
+          #line += "\"data\": \"" + col + "\"},"
           #print line
         
         colnum += 1
