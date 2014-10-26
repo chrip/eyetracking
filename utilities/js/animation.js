@@ -341,30 +341,38 @@ function canvasClick(event){
   // iterate over clicks
   for(var i = 0; i < idx; i++){
     if($('input[id=user' + parseInt(i+1) + ']').attr('checked')){
-  for(var j = 0; j < clicks[i].timestamps.length; j++){
+      for(var j = 0; j < clicks[i].timestamps.length; j++){
 
-    var x = event.pageX - $('#imageDiv').position().left - 200;
-    var y = event.pageY - $('#imageDiv').position().top;
-          
-          // get timestamp
-          var lt = clicks[i].timestamps[j].lt;
-          // get coordinates
-          var lx = clicks[i].timestamps[j].lx;
-          var ly = clicks[i].timestamps[j].ly;
+        var x = event.pageX - $('#imageDiv').position().left - 200;
+        var y = event.pageY - $('#imageDiv').position().top;
+              
+        // get timestamp
+        var lt = clicks[i].timestamps[j].lt;
+        // get coordinates
+        var lx = clicks[i].timestamps[j].lx;
+        var ly = clicks[i].timestamps[j].ly;
 
-          //scaling
-          if(bglWidth != imageObj.width){
-            var factor = parseFloat(bglWidth / imageObj.width);
-            lx *= factor;
-            ly *= factor;
-          }
-                    
-          if(y > ly - r && y < ly + r && x > lx - r && x < lx + r)
-            console.log("link clicked");
-  }
-  }
+        //scaling
+        if(bglWidth != imageObj.width){
+          var factor = parseFloat(bglWidth / imageObj.width);
+          lx *= factor;
+          ly *= factor;
+        }
+                        
+        if(y > ly - r && y < ly + r && x > lx - r && x < lx + r)
+          changeImage();
+      }
+    }
   }
 }    
+
+function changeImage(){
+  console.log("link clicked");
+  
+  filechanged = true;
+  drawCanvas('WEST-staff2.png');
+
+}
 
 function drawGazeplotAnimation(time, startT, endT, display){
   
