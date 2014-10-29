@@ -370,7 +370,7 @@ function changeImage(){
   console.log("link clicked");
   
   filechanged = true;
-  drawCanvas('WEST-staff2.png');
+  drawCanvas('WEST-staff2.jpg');
 
 }
 
